@@ -1,0 +1,35 @@
+<div>
+    <div class="modal-header">
+        <h3 class="modal-title">User '{[{input.username}]}' settings</h3>
+    </div>
+    <div class="modal-body">
+        <form name='form'>
+          <div class="form-group">
+            <label>Jabber</label>
+            <input type="text" class="form-control" placeholder="Jabber" ng-model="input.jabber">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="text" class="form-control" placeholder="Email" ng-model="input.email">
+          </div>
+          <div class="form-group">
+            <label>Old password:</label>
+            <input type="text" class="form-control" placeholder="Old password" ng-model="input.old_password" name="old_password">
+            <label>New password:</label>
+            <input type="password" class="form-control" placeholder="Password" ng-model="input.password" name="password">
+            <label>Retype new password:</label>
+            <input type="password" class="form-control" placeholder="Confirm password" ng-model="input.confirmPassword" name="confirmPassword" match="input.password">
+          </div>
+        </form>
+        <div ng-show="form.confirmPassword.$error.mismatch">Passwords don't match!</div>
+        <div ng-show="input.password_err">Wrong password!</div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-primary" ng-click="save()" ng-disabled="form.$invalid">
+            Save
+        </button>
+        <button class="btn btn-warning" ng-click="cancel()">
+            Cancel
+        </button>
+    </div>
+</div>

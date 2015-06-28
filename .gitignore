@@ -1,0 +1,8 @@
+*.pyc
+*.*~
+uploads/*
+app-client/node_modules
+app-client/bower_components
+app-client/build
+app-client/dist
+static

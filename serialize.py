@@ -1,6 +1,15 @@
 from marshmallow import Schema, fields
 
 
+class UserSchema(Schema):
+    id = fields.Integer()
+    username = fields.Str()
+    email = fields.Str()
+    jabber = fields.Str()
+    is_active = fields.Boolean()
+    is_admin = fields.Boolean()
+
+
 class ProjectSchema(Schema):
     id = fields.Integer()
     name = fields.Str()

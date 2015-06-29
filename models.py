@@ -2,6 +2,10 @@ import datetime
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.bcrypt import generate_password_hash, check_password_hash
 from sqlalchemy_utils.types.choice import ChoiceType
+from itsdangerous import (TimedJSONWebSignatureSerializer
+                          as Serializer, BadSignature, SignatureExpired)
+
+from config import AppConfig
 
 db = SQLAlchemy()
 
@@ -11,17 +15,18 @@ class User(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
-    jabber = db.Column(db.String(50), unique=True, nullable=True)
-    email = db.Column(db.String(50), unique=True, nullable=True)
-    is_active = db.Column(db.Boolean)
     password = db.Column(db.String(255))
+    email = db.Column(db.String(50), unique=True, nullable=True)
+    jabber = db.Column(db.String(50), unique=True, nullable=True)
+    is_active = db.Column(db.Boolean)
+    # is_admin = db.Column(db.Boolean)
 
     created_tasks = db.relationship(
         'Task', backref='creator_user', lazy='dynamic', foreign_keys='Task.creator_id')
     assigned_tasks = db.relationship(
         'Task', backref='assign_user', lazy='dynamic', foreign_keys='Task.assigned_id')
 
-    def __init__(self, username, password, jabber=None, email=None):
+    def __init__(self, username, password, email=None, jabber=None):
         self.username = username
         self.password = self.hash_password(password)
         self.jabber = jabber
@@ -51,6 +56,22 @@ class User(db.Model):
     @staticmethod
     def hash_password(password):
         return generate_password_hash(password)
+
+    def generate_auth_token(self, expiration=600):
+        s = Serializer(AppConfig.SECRET_KEY, expires_in=expiration)
+        return s.dumps({'id': self.id})
+
+    @staticmethod
+    def verify_auth_token(token):
+        s = Serializer(AppConfig.SECRET_KEY)
+        try:
+            data = s.loads(token)
+        except SignatureExpired:
+            return None  # valid token, but expired
+        except BadSignature:
+            return None  # invalid token
+        user = User.query.get(data['id'])
+        return user
 
 
 class Project(db.Model):

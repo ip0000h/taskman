@@ -1,13 +1,11 @@
-from functools import wraps
 from flask import Flask
-from flask import redirect, render_template, request, send_from_directory, url_for
+from flask import g, jsonify, render_template, send_from_directory
 from flask.ext.restful import Resource, Api
 from flask.ext.restful import reqparse
-from flask.ext.login import LoginManager, current_user, login_user, logout_user
+from flask.ext.httpauth import HTTPBasicAuth
 
 import models
 import serialize
-from forms import LoginForm
 
 #create flask application and load config from object
 app = Flask(__name__)
@@ -19,64 +17,116 @@ models.db.init_app(app)
 #init application api
 api = Api(app)
 
-#create and setup logger manager object
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
+#init auth object
+auth = HTTPBasicAuth()
 
 
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated():
-            if not app.config['DEBUG']:
-                return redirect(url_for('login', _scheme="https", _external=True))
-            else:
-                return redirect(url_for('login'))
-        return f(*args, **kwargs)
-    return decorated_function
+@auth.verify_password
+def verify_password(username_or_token, password):
+    # first try to authenticate by token
+    user = models.User.verify_auth_token(username_or_token)
+    if not user:
+        # try to authenticate with username/password
+        user = models.User.query.filter_by(username=username_or_token).first()
+        if not user or not user.check_password(password):
+            return False
+    g.user = user
+    return True
 
 
-@login_manager.user_loader
-def load_user(userid):
-    return models.User.query.get(userid)
-
-
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    form = LoginForm()
-    if form.validate_on_submit():
-        user = models.User.query.get(form.user.id)
-        login_user(user)
-        if not app.config['DEBUG']:
-            return redirect(request.args.get("next") or url_for("index", _scheme="https", _external=True))
-        else:
-            return redirect(request.args.get("next") or url_for("index"))
-    return render_template("login.html", form=form)
-
-
-@app.route("/logout")
-@login_required
-def logout():
-    logout_user()
-    if not app.config['DEBUG']:
-        return redirect(url_for("login", _scheme="https", _external=True))
-    else:
-        return redirect(url_for("login"))
+@app.route('/api/token')
+@auth.login_required
+def get_auth_token():
+    token = g.user.generate_auth_token()
+    return jsonify({'token': token.decode('ascii')})
 
 
 @app.route('/')
+@auth.login_required
 def index():
     return render_template('index.html')
 
 
 @app.route('/templates/<file_name>')
-@login_required
+@auth.login_required
 def templates(file_name):
     return send_from_directory('templates', file_name)
 
 
+class UserListAPI(Resource):
+
+    decorators = [auth.login_required]
+
+    def __init__(self):
+        self.reqparse = reqparse.RequestParser()
+        self.reqparse.add_argument(
+            'username', type=str, required=True,
+            help='No username provided', location='json')
+        self.reqparse.add_argument(
+            'password', type=str, required=True,
+            help='No password provided', location='json')
+        self.reqparse.add_argument(
+            'email', type=str, required=False, location='json')
+        self.reqparse.add_argument(
+            'jabber', type=str, required=False, location='json')
+        self.schema = serialize.UserSchema()
+        super(UserListAPI, self).__init__()
+
+    def get(self):
+        res = {}
+        users = models.User.query.all()
+        res['data'] = [self.schema.dump(user).data for user in users]
+        return res
+
+    def post(self):
+        res = {}
+        args = self.reqparse.parse_args()
+        new_user = models.User(
+            args['username'], args['password'], args['email'], args['jabber'])
+        models.db.session.add(new_user)
+        models.db.session.commit()
+        res['data'] = self.schema.dump(new_user).data
+        return res
+
+
+class UserAPI(Resource):
+
+    decorators = [auth.login_required]
+
+    def __init__(self):
+        self.reqparse = reqparse.RequestParser()
+        self.reqparse.add_argument(
+            'password', type=str, required=False, location='json')
+        self.reqparse.add_argument(
+            'email', type=str, required=False, location='json')
+        self.reqparse.add_argument(
+            'jabber', type=str, required=False, location='json')
+        self.schema = serialize.UserSchema()
+        super(UserAPI, self).__init__()
+
+    def get(self, id):
+        user = models.User.query.get(id)
+        return self.schema.dump(user).data
+
+    def put(self, id):
+        user = models.User.query.get(id)
+        args = self.reqparse.parse_args()
+        for k, v in args.items():
+            if v is not None:
+                setattr(user, k, v)
+        models.db.session.commit()
+        return {'status': 'ok'}
+
+    def delete(self, id):
+        user = models.User.query.get(id)
+        models.db.session.delete(user)
+        models.db.session.commit()
+        return {'status': 'ok'}
+
+
 class ProjectListAPI(Resource):
+
+    decorators = [auth.login_required]
 
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
@@ -104,6 +154,8 @@ class ProjectListAPI(Resource):
 
 class ProjectAPI(Resource):
 
+    decorators = [auth.login_required]
+
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
         self.reqparse.add_argument(
@@ -118,15 +170,23 @@ class ProjectAPI(Resource):
 
     def put(self, id):
         project = models.Project.query.get(id)
+        args = self.reqparse.parse_args()
+        for k, v in args.items():
+            if v is not None:
+                setattr(project, k, v)
+        models.db.session.commit()
         return {'status': 'ok'}
 
     def delete(self, id):
         project = models.Project.query.get(id)
         models.db.session.delete(project)
+        models.db.session.commit()
         return {'status': 'ok'}
 
 
 class GroupListAPI(Resource):
+
+    decorators = [auth.login_required]
 
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
@@ -154,6 +214,8 @@ class GroupListAPI(Resource):
 
 class GroupAPI(Resource):
 
+    decorators = [auth.login_required]
+
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
         self.reqparse.add_argument(
@@ -168,15 +230,23 @@ class GroupAPI(Resource):
 
     def put(self, id):
         group = models.Group.query.get(id)
+        args = self.reqparse.parse_args()
+        for k, v in args.items():
+            if v is not None:
+                setattr(group, k, v)
+        models.db.session.commit()
         return {'status': 'ok'}
 
     def delete(self, id):
         group = models.Group.query.get(id)
         models.db.session.delete(group)
+        models.db.session.commit()
         return {'status': 'ok'}
 
 
 class TaskListAPI(Resource):
+
+    decorators = [auth.login_required]
 
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
@@ -214,6 +284,8 @@ class TaskListAPI(Resource):
 
 class TaskAPI(Resource):
 
+    decorators = [auth.login_required]
+
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
         self.reqparse.add_argument(
@@ -237,13 +309,22 @@ class TaskAPI(Resource):
 
     def put(self, id):
         task = models.Task.query.get(id)
+        args = self.reqparse.parse_args()
+        for k, v in args.items():
+            if v is not None:
+                setattr(task, k, v)
+        models.db.session.commit()
         return {'status': 'ok'}
 
     def delete(self, id):
         task = models.Task.query.get(id)
         models.db.session.delete(task)
+        models.db.session.commit()
         return {'status': 'ok'}
 
+
+api.add_resource(UserListAPI, '/api/users', endpoint='users')
+api.add_resource(UserAPI, '/api/user/<int:id>', endpoint='user')
 api.add_resource(ProjectListAPI, '/api/projects', endpoint='projects')
 api.add_resource(ProjectAPI, '/api/project/<int:id>', endpoint='project')
 api.add_resource(GroupListAPI, '/api/groups/<int:project_id>', endpoint='groups')

@@ -73,20 +73,16 @@ class UserListAPI(Resource):
         super(UserListAPI, self).__init__()
 
     def get(self):
-        res = {}
         users = models.User.query.all()
-        res['data'] = [self.schema.dump(user).data for user in users]
-        return res
+        return [self.schema.dump(user).data for user in users]
 
     def post(self):
-        res = {}
         args = self.reqparse.parse_args()
         new_user = models.User(
             args['username'], args['password'], args['email'], args['jabber'])
         models.db.session.add(new_user)
         models.db.session.commit()
-        res['data'] = self.schema.dump(new_user).data
-        return res
+        return self.schema.dump(new_user).data
 
 
 class UserAPI(Resource):
@@ -137,19 +133,15 @@ class ProjectListAPI(Resource):
         super(ProjectListAPI, self).__init__()
 
     def get(self):
-        res = {}
         projects = models.Project.query.all()
-        res['data'] = [self.schema.dump(project).data for project in projects]
-        return res
+        return [self.schema.dump(project).data for project in projects]
 
     def post(self):
-        res = {}
         args = self.reqparse.parse_args()
         new_project = models.Project(args['name'])
         models.db.session.add(new_project)
         models.db.session.commit()
-        res['data'] = self.schema.dump(new_project).data
-        return res
+        return self.schema.dump(new_project).data
 
 
 class ProjectAPI(Resource):
@@ -197,19 +189,15 @@ class GroupListAPI(Resource):
         super(GroupListAPI, self).__init__()
 
     def get(self, project_id):
-        res = {}
         groups = models.Group.query.filter_by(project_id=project_id).all()
-        res['data'] = [self.schema.dump(group).data for group in groups]
-        return res
+        return [self.schema.dump(group).data for group in groups]
 
     def post(self, project_id):
-        res = {}
         args = self.reqparse.parse_args()
         new_group = models.Group(args['name'], project_id)
         models.db.session.add(new_group)
         models.db.session.commit()
-        res['data'] = self.schema.dump(new_group).data
-        return res
+        return self.schema.dump(new_group).data
 
 
 class GroupAPI(Resource):
@@ -265,21 +253,17 @@ class TaskListAPI(Resource):
         super(TaskListAPI, self).__init__()
 
     def get(self, group_id):
-        res = {}
         tasks = models.Task.query.filter_by(group_id=group_id).all()
-        res['data'] = [self.short_schema.dump(task).data for task in tasks]
-        return res
+        return [self.short_schema.dump(task).data for task in tasks]
 
     def post(self, group_id):
-        res = {}
         args = self.reqparse.parse_args()
         #REDO
         new_task = models.Task(
             args['title'], group_id, None, args['text'], args['status'])
         models.db.session.add(new_task)
         models.db.session.commit()
-        res['data'] = self.full_schema.dump(new_task).data
-        return res
+        return self.full_schema.dump(new_task).data
 
 
 class TaskAPI(Resource):
@@ -302,10 +286,8 @@ class TaskAPI(Resource):
         super(TaskAPI, self).__init__()
 
     def get(self, id):
-        res = {}
         task = models.Task.query.get(id)
-        res['data'] = self.schema.dump(task)
-        return res
+        return self.schema.dump(task).data
 
     def put(self, id):
         task = models.Task.query.get(id)

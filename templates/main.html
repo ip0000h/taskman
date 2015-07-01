@@ -1,0 +1,174 @@
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="projects" ng-controller="ProjectsController">
+                <div class="btn-group items-actions">
+                  <button type="button" class="btn btn-default" ng-click="addProject()">
+                    <span class="glyphicon glyphicon-plus"></span> Add Project
+                  </button>
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                      Selected Project
+                      <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                      <li><a href="" ng-click="deleteProject()">
+                      <span class="glyphicon glyphicon-trash"></span> Delete Project
+                      </a></li>
+                      <li><a href="" ng-click="renameProject()">
+                      <span class="glyphicon glyphicon-pencil"></span> Rename Project
+                      </a></li>
+                    </ul>
+                  </div>
+                </div>
+                <select class="form-control">
+                    <option ng-repeat="project in projects">{{project.name}}</option>
+                </select>
+            </div>
+            <div class="groups" ng-controller="GroupsController">
+                <div class="btn-group items-actions">
+                  <button type="button" class="btn btn-default" ng-click="addGroup()">
+                    <span class="glyphicon glyphicon-plus"></span> Add Group
+                  </button>
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                      Selected Group
+                      <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                      <li><a href="" ng-click="deleteGroup()">
+                      <span class="glyphicon glyphicon-trash"></span> Delete Group
+                      </a></li>
+                      <li><a href="" ng-click="renameGroup()">
+                      <span class="glyphicon glyphicon-pencil"></span> Rename Group
+                      </a></li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="list-group">
+                    <a class="list-group-item" ng-repeat="group in groups"
+                    href="" ng-click="setGroup(group.id, group.name, $index);"
+                    ng-class="{active: $index == selectedGroup}">
+                    {{group.name}}<span class="badge pull-right">
+                    {{group.tasks_count}}</span></a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-9" ng-controller="TasksListController">
+            <div class="row">
+                <div class="col-md-9">
+                   <div class="btn-group items-actions">
+                        <div class="btn-group">
+                        <button type="button" class="btn btn-default dropdown-toggle"
+                         ng-disabled="selectedServers.length == 0" data-toggle="dropdown">
+                          Selected Servers
+                          <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu">
+                          <li><a href="" ng-click="moveServers()">
+                          <span class="glyphicon glyphicon-floppy-save"></span> Move Selected
+                          </a></li>
+                          <li><a href="" ng-click="deleteServers()">
+                          <span class="glyphicon glyphicon-trash"></span> Delete Selected
+                          </a></li>
+                        </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                  <!-- <div class="paginator">
+                    <div class="btn-group">
+                      <button type="button" class="btn btn-default btn-sm"
+                       ng-disabled="activePage == 1" ng-click="gotoPage(1)">
+                      <span class="glyphicon glyphicon-fast-backward"></span>
+                      </button>
+                      <button type="button" class="btn btn-default btn-sm"
+                       ng-disabled="activePage == 1" ng-click="gotoPage(activePage-1)">
+                      <span class="glyphicon glyphicon-step-backward"></span>
+                      </button>
+                      <div class="btn-group">
+                          <button type="button"
+                           class="btn btn-default btn-sm dropdown-toggle"
+                           data-toggle="dropdown">
+                              {{activePage}}/{{pagesCount}}
+                          </button>
+                      </div>
+                      <button type="button" class="btn btn-default btn-sm"
+                       ng-disabled="activePage == pagesCount" ng-click="gotoPage(activePage+1)">
+                      <span class="glyphicon glyphicon-step-forward"></span>
+                      </button>
+                      <button type="button" class="btn btn-default btn-sm"
+                       ng-disabled="activePage == pagesCount" ng-click="gotoPage(pagesCount)">
+                      <span class="glyphicon glyphicon-fast-forward"></span>
+                      </button>
+                    </div>
+                  </div> -->
+                </div>
+            </div>
+            <div ng-hide="loading" class="panel panel-default">
+              <table class="table table-bordered">
+              <thead>
+              <tr>
+                  <th width="1%">
+                      <input type="checkbox" ng-click="selectPageServers()" ng-model="selectAll">
+                  </th>
+                  <th>#</th>
+                  <th>Title</th>
+                  <th>Status</th>
+                  <th>Updated</th>
+                  <th>Created</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr ng-repeat="task in servers">
+                  <td>
+                      <input type="checkbox" ng-click="selectServer(task.id)" ng-model="task.selected">
+                  </td>
+                  <td>
+                    <a href="" ng-click="openServerDetails(task.id)">
+                      {{task.id}}
+                    </a>
+                  </td>
+                  <td>{{task.title}}</td>
+                  <td>{{task.status}}</td>
+                  <td>{{task.updated | datetz}}</td>
+                  <td>{{task.created | datetz}}</td>
+              </tr>
+              </tbody>
+              </table>
+            </div>
+            
+            <div ng-show="loading" class="panel panel-default">
+              <div id="loading-spin"></div>
+            </div>
+
+            <!-- <div class="paginator">
+                <div class="btn-group">
+                  <button type="button" class="btn btn-default btn-sm"
+                   ng-disabled="activePage == 1" ng-click="gotoPage(1)">
+                  <span class="glyphicon glyphicon-fast-backward"></span>
+                  </button>
+                  <button type="button" class="btn btn-default btn-sm"
+                   ng-disabled="activePage == 1" ng-click="gotoPage(activePage-1)">
+                  <span class="glyphicon glyphicon-step-backward"></span>
+                  </button>
+                  <div class="btn-group">
+                      <button type="button"
+                       class="btn btn-default btn-sm dropdown-toggle"
+                       data-toggle="dropdown">
+                          {{activePage}}/{{pagesCount}}
+                      </button>
+                  </div>
+                  <button type="button" class="btn btn-default btn-sm"
+                   ng-disabled="activePage == pagesCount" ng-click="gotoPage(activePage+1)">
+                  <span class="glyphicon glyphicon-step-forward"></span>
+                  </button>
+                  <button type="button" class="btn btn-default btn-sm"
+                   ng-disabled="activePage == pagesCount" ng-click="gotoPage(pagesCount)">
+                  <span class="glyphicon glyphicon-fast-forward"></span>
+                  </button>
+                </div>
+            </div> -->
+        </div>
+    </div>
+</div>

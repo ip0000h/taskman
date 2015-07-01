@@ -16,9 +16,14 @@ module.exports = function(grunt) {
         {
           expand : true,
           flatten : true,
-          src : 'bower_components/bootstrap/dist/fonts',
-          dest : '../static/',
-          filter : 'isFile'
+          src : 'bower_components/bootstrap/dist/fonts/*',
+          dest : '../static/fonts/'
+        },
+        {
+          expand : true,
+          flatten : true,
+          src : 'src/img/*',
+          dest : '../static/img/'
         }
         ]
       }

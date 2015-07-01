@@ -19,7 +19,7 @@ class User(db.Model):
     email = db.Column(db.String(50), unique=True, nullable=True)
     jabber = db.Column(db.String(50), unique=True, nullable=True)
     is_active = db.Column(db.Boolean)
-    # is_admin = db.Column(db.Boolean)
+    is_admin = db.Column(db.Boolean)
 
     created_tasks = db.relationship(
         'Task', backref='creator_user', lazy='dynamic', foreign_keys='Task.creator_id')
@@ -130,6 +130,7 @@ class Task(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     created = db.Column(db.DateTime, nullable=False)
+    updated = db.Column(db.DateTime, nullable=False)
     title = db.Column(db.String(255), nullable=False)
     text = db.Column(db.Text, nullable=True)
     status = db.Column(ChoiceType(TASK_STATUS_CHOICES), nullable=False)
@@ -153,12 +154,12 @@ class Task(db.Model):
     ):
         self.title = title
         self.group_id = group_id
-        #REDO
-        self.creator_id = creator_id if creator_id else 1
+        self.creator_id = creator_id
         self.text = text
         self.status = status
         self.assigned_id = assigned_id
         self.created = datetime.datetime.utcnow() if created is None else created
+        self.updated = datetime.datetime.utcnow() if created is None else created
 
     def __repr__(self):
         return '<Task {0}>'.format(self.id)

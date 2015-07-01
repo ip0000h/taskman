@@ -41,5 +41,6 @@ class TaskFullSchema(Schema):
 class TaskShortSchema(Schema):
     id = fields.Integer()
     created = fields.DateTime()
+    updated = fields.DateTime()
     title = fields.Str()
     status = fields.Str()

@@ -6,14 +6,18 @@ app.factory('Projects', ['$resource', function($resource) {
     return $resource(
         '/api/projects',
         null,
-        {'query': { method: 'GET', isArray: true}}
+        {'query': {method: 'GET', isArray: true}}
     );
 }]);
 
 //////////////////////////////////
 //project single service
 app.factory('Project', ['$resource', function($resource) {
-    return $resource('/api/project/:projectId');
+    return $resource(
+        '/api/project/:projectId',
+        null,
+        {'update': {method:'PUT'}}
+    );
 }]);
 
 //////////////////////////////////
@@ -29,7 +33,11 @@ app.factory('Groups', ['$resource', function($resource) {
 //////////////////////////////////
 //group single service
 app.factory('Group', ['$resource', function($resource) {
-    return $resource('/api/group/:groupId');
+    return $resource(
+        '/api/group/:groupId',
+        null,
+        {'update': {method:'PUT'}}
+    );
 }]);
 
 //////////////////////////////////
@@ -45,5 +53,9 @@ app.factory('Tasks', ['$resource', function($resource) {
 //////////////////////////////////
 //task single service
 app.factory('Task', ['$resource', function($resource) {
-    return $resource('/api/task/:taskId');
+    return $resource(
+        '/api/task/:taskId',
+        null,
+        {'update': {method:'PUT'}}
+    );
 }]);

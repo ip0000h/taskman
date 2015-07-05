@@ -12,7 +12,7 @@ app.controller('GroupsController',
                 $scope.selectedGroup = 0;
             }
             else{
-                $rootScope.activeGroup = null
+                $rootScope.activeGroup = null;
             }
             $rootScope.$broadcast('showGroupTasks');
         });

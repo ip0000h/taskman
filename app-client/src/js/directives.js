@@ -20,6 +20,7 @@ app.directive('fileModel', ['$parse',
     }
 ]);
 
+//////////////////////////////////
 //directive to check that passwords match
 app.directive('match', function($parse) {
     return {

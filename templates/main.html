@@ -21,8 +21,11 @@
                     </ul>
                   </div>
                 </div>
-                <select class="form-control">
-                    <option ng-repeat="project in projects">{{project.name}}</option>
+                <select class="form-control"
+                ng-options="project.name for project in projects"
+                ng-model="selectedProject"
+                ng-init="selectedProject"
+                ng-change="setProject()">
                 </select>
             </div>
             <div class="groups" ng-controller="GroupsController">
@@ -60,15 +63,15 @@
                    <div class="btn-group items-actions">
                         <div class="btn-group">
                         <button type="button" class="btn btn-default dropdown-toggle"
-                         ng-disabled="selectedServers.length == 0" data-toggle="dropdown">
-                          Selected Servers
+                         ng-disabled="selectedTasks.length == 0" data-toggle="dropdown">
+                          Selected Tasks
                           <span class="caret"></span>
                         </button>
                         <ul class="dropdown-menu">
-                          <li><a href="" ng-click="moveServers()">
+                          <li><a href="" ng-click="moveTasks()">
                           <span class="glyphicon glyphicon-floppy-save"></span> Move Selected
                           </a></li>
-                          <li><a href="" ng-click="deleteServers()">
+                          <li><a href="" ng-click="deleteTasks()">
                           <span class="glyphicon glyphicon-trash"></span> Delete Selected
                           </a></li>
                         </ul>
@@ -110,7 +113,7 @@
               <thead>
               <tr>
                   <th width="1%">
-                      <input type="checkbox" ng-click="selectPageServers()" ng-model="selectAll">
+                      <input type="checkbox" ng-click="selectPageTasks()" ng-model="selectAll">
                   </th>
                   <th>#</th>
                   <th>Title</th>
@@ -120,12 +123,12 @@
               </tr>
               </thead>
               <tbody>
-              <tr ng-repeat="task in servers">
+              <tr ng-repeat="task in tasks">
                   <td>
-                      <input type="checkbox" ng-click="selectServer(task.id)" ng-model="task.selected">
+                      <input type="checkbox" ng-click="selectTask(task.id)" ng-model="task.selected">
                   </td>
                   <td>
-                    <a href="" ng-click="openServerDetails(task.id)">
+                    <a href="" ng-click="openTaskDetails(task.id)">
                       {{task.id}}
                     </a>
                   </td>

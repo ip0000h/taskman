@@ -258,9 +258,8 @@ class TaskListAPI(Resource):
 
     def post(self, group_id):
         args = self.reqparse.parse_args()
-        #REDO
         new_task = models.Task(
-            args['title'], group_id, None, args['text'], args['status'])
+            args['title'], group_id, g.user.id, args['text'], args['status'], args['assigned'])
         models.db.session.add(new_task)
         models.db.session.commit()
         return self.full_schema.dump(new_task).data

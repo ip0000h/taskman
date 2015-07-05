@@ -1,6 +1,5 @@
 /////////////////////////////////////////////////////////////////////
 //app services
-
 //////////////////////////////////
 //projects list service
 app.factory('Projects', ['$resource', function($resource) {
@@ -45,6 +44,6 @@ app.factory('Tasks', ['$resource', function($resource) {
 
 //////////////////////////////////
 //task single service
-app.factory('Tasks', ['$resource', function($resource) {
+app.factory('Task', ['$resource', function($resource) {
     return $resource('/api/task/:taskId');
 }]);

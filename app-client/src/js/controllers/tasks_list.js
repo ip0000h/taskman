@@ -1,12 +1,19 @@
 /////////////////////////////////////////////////////////////////////
+//////////////////////////////////
 //tasks controller
-app.controller('TasksListController', ['$rootScope', '$scope', '$modal', 'Tasks', function($rootScope, $scope, $modal, Tasks) {
-    $scope.tasks = [];
-    $scope.selectedTasks = [];
-    $scope.selectAll = false;
+app.controller('TasksListController',
+    ['$rootScope', '$scope', '$modal', 'Tasks',
+    function ($rootScope, $scope, $modal, Tasks) {
 
-    $scope.$on('showGroupTasks', function() {
-        $scope.tasks = Tasks.query({groupId: $rootScope.activeGroup});
+    $rootScope.$on('showGroupTasks', function() {
+        if ($rootScope.activeGroup) {
+            $scope.tasks = Tasks.query({groupId: $rootScope.activeGroup});
+        }
+        else {
+            $scope.tasks =[];
+        }
+        $scope.selectedTasks = [];
+        $scope.selectAll = false;
     });
 
     $scope.selectTask = function(task_id) {

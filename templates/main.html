@@ -50,7 +50,7 @@
                 </div>
                 <div class="list-group">
                     <a class="list-group-item" ng-repeat="group in groups"
-                    href="" ng-click="setGroup(group.id, group.name, $index);"
+                    href="" ng-click="setGroup(group.id, group.name, $index)"
                     ng-class="{active: $index == selectedGroup}">
                     {{group.name}}<span class="badge pull-right">
                     {{group.tasks_count}}</span></a>
@@ -61,6 +61,9 @@
             <div class="row">
                 <div class="col-md-9">
                    <div class="btn-group items-actions">
+                        <button type="button" class="btn btn-default" ng-click="addTask()">
+                            <span class="glyphicon glyphicon-plus"></span> Add Task
+                        </button>
                         <div class="btn-group">
                         <button type="button" class="btn btn-default dropdown-toggle"
                          ng-disabled="selectedTasks.length == 0" data-toggle="dropdown">
@@ -113,7 +116,7 @@
               <thead>
               <tr>
                   <th width="1%">
-                      <input type="checkbox" ng-click="selectPageTasks()" ng-model="selectAll">
+                      <input type="checkbox" ng-click="selectPageTasks()">
                   </th>
                   <th>#</th>
                   <th>Title</th>
@@ -128,7 +131,7 @@
                       <input type="checkbox" ng-click="selectTask(task.id)" ng-model="task.selected">
                   </td>
                   <td>
-                    <a href="" ng-click="openTaskDetails(task.id)">
+                    <a href="#/task/{{task.id}}">
                       {{task.id}}
                     </a>
                   </td>

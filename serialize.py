@@ -44,3 +44,15 @@ class TaskShortSchema(Schema):
     updated = fields.DateTime()
     title = fields.Str()
     status = fields.Str()
+
+
+class AttachmentSchema(Schema):
+    id = fields.Integer()
+    created = fields.DateTime()
+    filename = fields.Str()
+
+
+class TimeSchema(Schema):
+    id = fields.Integer()
+    start = fields.DateTime()
+    stop = fields.DateTime()

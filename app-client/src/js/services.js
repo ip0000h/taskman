@@ -26,7 +26,7 @@ app.factory('Groups', ['$resource', function($resource) {
     return $resource(
         '/api/groups/:projectId',
         null,
-        {'query': { method: 'GET', isArray: true}}
+        {'query': {method: 'GET', isArray: true}}
     );
 }]);
 
@@ -46,7 +46,11 @@ app.factory('Tasks', ['$resource', function($resource) {
     return $resource(
         '/api/tasks/:groupId',
         null,
-        {'query': { method: 'GET', isArray: true}}
+        {
+            'query': {method: 'GET', isArray: true},
+            'remove': {method: 'POST'},
+            'update': {method:'PUT'}
+        }
     );
 }]);
 

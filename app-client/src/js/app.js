@@ -17,9 +17,9 @@ app.config(['$routeProvider', function($routeProvider) {
         .when('/', {
             templateUrl: "/templates/main.html"
         })
-        // //details
-        .when('/details', {
-            templateUrl: "templates/details.html",
+        //task details
+        .when('/task/:id', {
+            templateUrl: "templates/task_details.html",
         })
         //otherwise
         .otherwise({ redirectTo: '/' });

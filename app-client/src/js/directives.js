@@ -3,7 +3,7 @@
 //////////////////////////////////
 //directive to work with files model
 app.directive('fileModel', ['$parse',
-    function($parse) {
+    function ($parse) {
         return {
             restrict: 'A',
             link: function(scope, element, attrs) {
@@ -22,7 +22,7 @@ app.directive('fileModel', ['$parse',
 
 //////////////////////////////////
 //directive to check that passwords match
-app.directive('match', function($parse) {
+app.directive('match', function ($parse) {
     return {
         require: 'ngModel',
         link: function(scope, elem, attrs, ctrl) {

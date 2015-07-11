@@ -4,55 +4,8 @@
 app.controller('ProjectsController',
     ['$rootScope', '$scope', '$modal', 'Projects',
     function ($rootScope, $scope, $modal, Projects) {
-    //init
-    $scope.projects = Projects.query(function() {
-        if ($scope.projects.length) {
-            $rootScope.activeProject = $scope.projects[0].id;
-            $scope.selectedProject = $scope.projects[0];
-        }
-        else {
-            $rootScope.activeProject=null;
-        }
-        $rootScope.$broadcast('showProjectsGroups');
-    });
-
-    //select current project
-    $scope.setProject = function() {
-        $rootScope.activeProject = $scope.selectedProject.id;
-        $rootScope.$broadcast('showProjectsGroups');
-    };
-
-    //add project
-    $scope.addProject = function() {
-        var modalInstance = $modal.open({
-            templateUrl: 'templates/add_project.html',
-            controller: 'AddProjectController',
-        });
-        modalInstance.result.then(function(data) {
-            $scope.projects.push(data);
-            $rootScope.activeProject = data.id;
-            $scope.selectedProject = data;
-            $rootScope.$broadcast('showProjectsGroups');
-        });
-    };
-
-    //delete project
-    $scope.deleteProject = function() {
-        var modalInstance = $modal.open({
-            templateUrl: 'templates/delete_project.html',
-            controller: 'DeleteProjectController',
-            resolve: {
-                id: function() {
-                    return $scope.selectedProject.id;
-                },
-                name: function() {
-                    return $scope.selectedProject.name;
-                }
-            }
-        });
-        modalInstance.result.then(function() {
-            var ind = $scope.projects.indexOf($scope.selectedProject);
-            $scope.projects.splice(ind, 1);
+        //init
+        $scope.projects = Projects.query(function() {
             if ($scope.projects.length) {
                 $rootScope.activeProject = $scope.projects[0].id;
                 $scope.selectedProject = $scope.projects[0];
@@ -62,26 +15,73 @@ app.controller('ProjectsController',
             }
             $rootScope.$broadcast('showProjectsGroups');
         });
-    };
 
-    //rename project
-    $scope.renameProject = function() {
-        var modalInstance = $modal.open({
-            templateUrl: 'templates/rename_project.html',
-            controller: 'RenameProjectController',
-            resolve: {
-                id: function() {
-                    return $scope.selectedProject.id;
-                },
-                oldName: function() {
-                    return $scope.selectedProject.name;
+        //select current project
+        $scope.setProject = function() {
+            $rootScope.activeProject = $scope.selectedProject.id;
+            $rootScope.$broadcast('showProjectsGroups');
+        };
+
+        //add project
+        $scope.addProject = function() {
+            var modalInstance = $modal.open({
+                templateUrl: 'templates/add_project.html',
+                controller: 'AddProjectController',
+            });
+            modalInstance.result.then(function(data) {
+                $scope.projects.push(data);
+                $rootScope.activeProject = data.id;
+                $scope.selectedProject = data;
+                $rootScope.$broadcast('showProjectsGroups');
+            });
+        };
+
+        //delete project
+        $scope.deleteProject = function() {
+            var modalInstance = $modal.open({
+                templateUrl: 'templates/delete_project.html',
+                controller: 'DeleteProjectController',
+                resolve: {
+                    id: function() {
+                        return $scope.selectedProject.id;
+                    },
+                    name: function() {
+                        return $scope.selectedProject.name;
+                    }
                 }
-            }
-        });
-        modalInstance.result.then(function(data) {
-            $scope.selectedProject.name = data;
-        });
-    };
+            });
+            modalInstance.result.then(function() {
+                var ind = $scope.projects.indexOf($scope.selectedProject);
+                $scope.projects.splice(ind, 1);
+                if ($scope.projects.length) {
+                    $rootScope.activeProject = $scope.projects[0].id;
+                    $scope.selectedProject = $scope.projects[0];
+                }
+                else {
+                    $rootScope.activeProject=null;
+                }
+                $rootScope.$broadcast('showProjectsGroups');
+            });
+        };
+
+        //rename project
+        $scope.renameProject = function() {
+            var modalInstance = $modal.open({
+                templateUrl: 'templates/rename_project.html',
+                controller: 'RenameProjectController',
+                resolve: {
+                    id: function() {
+                        return $scope.selectedProject.id;
+                    },
+                    oldName: function() {
+                        return $scope.selectedProject.name;
+                    }
+                }
+            });
+            modalInstance.result.then(function(data) {
+                $scope.selectedProject.name = data;
+            });
+        };
 }]);
 
 //////////////////////////////////

@@ -210,10 +210,10 @@ class Time(db.Model):
 
     task_id = db.Column(db.Integer, db.ForeignKey('tasks.id'), nullable=False)
 
-    def __init__(self, filename, task_id, created=None):
-        self.filename = filename
+    def __init__(self, task_id, start=None, stop=None):
         self.task_id = task_id
-        self.created = datetime.datetime.utcnow() if created is None else created
+        self.start = datetime.datetime.utcnow() if start is None else start
+        self.stop = stop
 
     def __repr__(self):
         return '<Time {0}>'.format(self.id)

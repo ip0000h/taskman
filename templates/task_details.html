@@ -1,0 +1,28 @@
+<div ng-controller="TasksDetailsController" class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div ng-hide="loading" class="panel panel-default">
+                <table class="table table-bordered">
+                    <thead>
+                        <th>#</th>
+                        <th>Title</th>
+                        <th>Status</th>
+                        <th>Updated</th>
+                        <th>Created</th>
+                        <th>Created By</th>
+                        <th>Assigned</th>
+                    </thead>
+                    <tbody>
+                        <td>{{task.id}}</td>
+                        <td>{{task.title}}</td>
+                        <td>{{task.status}}</td>
+                        <td>{{task.updated | datetz}}</td>
+                        <td>{{task.created | datetz}}</td>
+                        <td>{{task.creator_username}}</td>
+                        <td>{{task.assigned_username}}</td>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

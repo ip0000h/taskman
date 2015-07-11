@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask import Flask
 from flask import g, jsonify, render_template, send_from_directory
 from flask.ext.restful import Resource, Api
@@ -265,6 +266,35 @@ class TaskListAPI(Resource):
         return self.full_schema.dump(new_task).data
 
 
+class TaskChangeListApi(Resource):
+
+    decorators = [auth.login_required]
+
+    def __init__(self):
+        self.reqparse = reqparse.RequestParser()
+        self.reqparse.add_argument(
+            'id', type=int, required=True, action='append')
+        self.reqparse.add_argument(
+            'new_group_id', type=int, required=True, action='append')
+        super(TaskChangeListApi, self).__init__()
+
+    def post(self):
+        args = self.reqparse.parse_args()
+        args.remove_argument('new_group_id')
+        models.Task.query.filter(
+            models.Task.id.in_(args['id'])).delete(synchronize_session='fetch')
+        models.db.session.commit()
+        return {'status': 'ok'}
+
+    def put(self):
+        args = self.reqparse.parse_args()
+        tasks = models.Task.query.filter(models.Task.id.in_(args['id'])).all()
+        for task in tasks:
+            task.group_id = args['new_group_id']
+        models.db.session.commit()
+        return {'status': 'ok'}
+
+
 class TaskAPI(Resource):
 
     decorators = [auth.login_required]
@@ -304,6 +334,109 @@ class TaskAPI(Resource):
         return {'status': 'ok'}
 
 
+class AttachmentListAPI(Resource):
+
+    decorators = [auth.login_required]
+
+    def __init__(self):
+        self.reqparse = reqparse.RequestParser()
+        self.reqparse.add_argument(
+            'filename', type=str, required=True,
+            help='No attachment filename provided', location='json')
+        self.schema = serialize.AttachmentSchema()
+        super(AttachmentListAPI, self).__init__()
+
+    def get(self, task_id):
+        attachments = models.Attachment.filter_by(task_id=task_id).all()
+        return [self.schema.dump(attachment).data for attachment in attachments]
+
+    def post(self, task_id):
+        args = self.reqparse.parse_args()
+        new_attachment = models.Task(args['filename'], task_id)
+        models.db.session.add(new_attachment)
+        models.db.session.commit()
+        return self.full_schema.dump(new_attachment).data
+
+
+class AttachmentAPI(Resource):
+
+    decorators = [auth.login_required]
+
+    def __init__(self):
+        self.schema = serialize.AttachmentSchema()
+        super(AttachmentAPI, self).__init__()
+
+    def get(self, id):
+        attachment = models.Attachment.get(id)
+        return self.schema.dump(attachment).data
+
+    def delete(self, id):
+        attachment = models.Attachment.get(id)
+        models.db.session.delete(attachment)
+        models.db.session.commit()
+        return {'status': 'ok'}
+
+
+class TimeListAPI(Resource):
+
+    decorators = [auth.login_required]
+
+    def __init__(self):
+        self.reqparse = reqparse.RequestParser()
+        self.reqparse.add_argument(
+            'start', type=datetime, required=True,
+            help='No start time provided', location='json')
+        self.reqparse.add_argument(
+            'stop', type=datetime, required=False, location='json')
+        self.schema = serialize.TimeSchema()
+        super(TimeListAPI, self).__init__()
+
+    def get(self, task_id):
+        times = models.Time.filter_by(task_id=task_id).all()
+        return [self.schema.dump(time).data for time in times]
+
+    def post(self, task_id):
+        args = self.reqparse.parse_args()
+        new_time = models.Task(task_id, args['start'], args['stop'])
+        models.db.session.add(new_time)
+        models.db.session.commit()
+        return self.full_schema.dump(new_time).data
+
+
+class TimeAPI(Resource):
+
+    decorators = [auth.login_required]
+
+    def __init__(self):
+        self.reqparse = reqparse.RequestParser()
+        self.reqparse.add_argument(
+            'start', type=datetime, required=True,
+            help='No start time provided', location='json')
+        self.reqparse.add_argument(
+            'stop', type=datetime, required=False, location='json')
+        self.schema = serialize.TimeSchema()
+        super(TimeListAPI, self).__init__()
+
+    def get(self, id):
+        time = models.Time.get(id)
+        return self.schema.dump(time).data
+
+    def put(self, id):
+        time = models.Time.query.get(id)
+        args = self.reqparse.parse_args()
+        for k, v in args.items():
+            if v is not None:
+                setattr(time, k, v)
+        models.db.session.commit()
+        return {'status': 'ok'}
+
+    def delete(self, id):
+        time = models.Time.get(id)
+        models.db.session.delete(time)
+        models.db.session.commit()
+        return {'status': 'ok'}
+
+
 api.add_resource(UserListAPI, '/api/users', endpoint='users')
 api.add_resource(UserAPI, '/api/user/<int:id>', endpoint='user')
 api.add_resource(ProjectListAPI, '/api/projects', endpoint='projects')
@@ -311,7 +444,13 @@ api.add_resource(ProjectAPI, '/api/project/<int:id>', endpoint='project')
 api.add_resource(GroupListAPI, '/api/groups/<int:project_id>', endpoint='groups')
 api.add_resource(GroupAPI, '/api/group/<int:id>', endpoint='group')
 api.add_resource(TaskListAPI, '/api/tasks/<int:group_id>', endpoint='tasks')
+api.add_resource(TaskChangeListApi, '/api/tasks', endpoint='change_tasks')
 api.add_resource(TaskAPI, '/api/task/<int:id>', endpoint='task')
+api.add_resource(AttachmentListAPI, '/api/attachments/<int:task_id>', endpoint='attachments')
+api.add_resource(AttachmentAPI, '/api/attachment/<int:id>', endpoint='attachment')
+api.add_resource(TimeListAPI, '/api/times/<int:task_id>', endpoint='times')
+api.add_resource(TimeAPI, '/api/time/<int:id>', endpoint='time')
+
 
 if __name__ == "__main__":
     app.run()

@@ -33,8 +33,12 @@ app.controller('TasksListController',
             });
             modalInstance.result.then(function(data) {
                 $scope.tasks.push(data);
-                $rootScope.$broadcast(
-                    'changeGroupTasksCount', 1);
+                changeGroupData = {
+                    'groupId': $rootScope.activeGroup,
+                    'tasksCount': 1,
+                    'mul': 1
+                };
+                $rootScope.$broadcast('changeGroupTasksCount', changeGroupData);
             });
         };
 
@@ -48,27 +52,22 @@ app.controller('TasksListController',
                 $scope.selectedTasks.push(taskId);
                 $scope.selectAll = false;
             }
-            console.log($scope.selectedTasks);
         };
 
         //select all tasks at current page
         $scope.selectPageTasks = function() {
             $scope.selectedTasks = [];
             if ($scope.selectAll) {
-                console.log('unselect all');
                 $scope.selectAll = false;
             } else {
-                console.log('select all');
                 $scope.selectAll = true;
                 $scope.tasks.forEach(function(item) {
                     $scope.selectedTasks.push(item.id);
-                    console.log(item.id);
                 });
             }
             $scope.tasks.forEach(function(item) {
                 item.selected = $scope.selectAll;
             });
-            console.log($scope.selectedTasks);
         };
 
         //delete tasks
@@ -147,7 +146,7 @@ app.controller('TasksListController',
 }]);
 
 //////////////////////////////////
-//add group controller
+//add task controller
 app.controller('AddTaskController',
     ['$scope', '$modalInstance', 'Tasks', 'groupId',
     function ($scope, $modalInstance, Tasks, groupId) {
@@ -173,7 +172,7 @@ app.controller('AddTaskController',
 }]);
 
 //////////////////////////////////
-//delete group modal controller
+//delete task modal controller
 app.controller('DeleteTasksController',
     ['$scope', '$modalInstance', 'Tasks', 'selectedTasks',
     function ($scope, $modalInstance, Tasks, selectedTasks) {

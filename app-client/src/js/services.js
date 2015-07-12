@@ -63,3 +63,43 @@ app.factory('Task', ['$resource', function($resource) {
         {'update': {method:'PUT'}}
     );
 }]);
+
+//////////////////////////////////
+//times list service
+app.factory('Times', ['$resource', function($resource) {
+    return $resource(
+        '/api/times/:taskId',
+        null,
+        {'query': {method: 'GET', isArray: true}}
+    );
+}]);
+
+//////////////////////////////////
+//group single service
+app.factory('Time', ['$resource', function($resource) {
+    return $resource(
+        '/api/time/:timeId',
+        null,
+        {'update': {method:'PUT'}}
+    );
+}]);
+
+//////////////////////////////////
+//times list service
+app.factory('Attachments', ['$resource', function($resource) {
+    return $resource(
+        '/api/times/:taskId',
+        null,
+        {'query': {method: 'GET', isArray: true}}
+    );
+}]);
+
+//////////////////////////////////
+//group single service
+app.factory('Attachment', ['$resource', function($resource) {
+    return $resource(
+        '/api/time/:attachmentId',
+        null,
+        {'update': {method:'PUT'}}
+    );
+}]);

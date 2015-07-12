@@ -1,7 +1,7 @@
-<div ng-controller="TasksDetailsController" class="container-fluid">
+<div class="container-fluid">
     <div class="row">
-        <div class="col-md-12">
-            <div ng-hide="loading" class="panel panel-default">
+        <div ng-controller="TasksDetailsController" class="col-md-12">
+            <div class="panel panel-default">
                 <table class="table table-bordered">
                     <thead>
                         <th>#</th>
@@ -20,6 +20,76 @@
                         <td>{{task.created | datetz}}</td>
                         <td>{{task.creator_username}}</td>
                         <td>{{task.assigned_username}}</td>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div ng-controller="TimesListController" class="col-md-6">
+            <div class="btn-group items-actions">
+              <button type="button" class="btn btn-default" ng-click="addTime()">
+                <span class="glyphicon glyphicon-plus"></span> Add Group
+              </button>
+              <div class="btn-group">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                  Selected Time
+                  <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                  <li><a href="" ng-click="deleteTime()">
+                  <span class="glyphicon glyphicon-trash"></span> Delete Times
+                  </a></li>
+                </ul>
+              </div>
+            </div>
+            <div class="panel panel-default">
+                <table class="table table-bordered">
+                    <thead>
+                        <th>#</th>
+                        <th>Start time</th>
+                        <th>Stop time</th>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="time in times">
+                            <td>{{time.id}}</td>
+                            <td>{{time.start}}</td>
+                            <td>{{time.stop}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div ng-controller="AttachmentsListController" class="col-md-6">
+            <div class="btn-group items-actions">
+              <button type="button" class="btn btn-default" ng-click="addAttachment()">
+                <span class="glyphicon glyphicon-plus"></span> Add Attachment
+              </button>
+              <div class="btn-group">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                  Selected Attachments
+                  <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                  <li><a href="" ng-click="deleteAttachment()">
+                  <span class="glyphicon glyphicon-trash"></span> Delete Attachments
+                  </a></li>
+                </ul>
+              </div>
+            </div>
+            <div class="panel panel-default">
+                <table class="table table-bordered">
+                    <thead>
+                        <th>#</th>
+                        <th>Filename</th>
+                        <th>Created</th>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="attachment in attachments">
+                            <td>{{attachment.id}}</td>
+                            <td>{{attachment.filename}}</td>
+                            <td>{{attachment.created}}</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>

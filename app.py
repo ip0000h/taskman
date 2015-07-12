@@ -275,12 +275,11 @@ class TaskChangeListApi(Resource):
         self.reqparse.add_argument(
             'id', type=int, required=True, action='append')
         self.reqparse.add_argument(
-            'new_group_id', type=int, required=True, action='append')
+            'new_group_id', type=int, required=False, location='json')
         super(TaskChangeListApi, self).__init__()
 
     def post(self):
         args = self.reqparse.parse_args()
-        args.remove_argument('new_group_id')
         models.Task.query.filter(
             models.Task.id.in_(args['id'])).delete(synchronize_session='fetch')
         models.db.session.commit()
@@ -347,15 +346,15 @@ class AttachmentListAPI(Resource):
         super(AttachmentListAPI, self).__init__()
 
     def get(self, task_id):
-        attachments = models.Attachment.filter_by(task_id=task_id).all()
+        attachments = models.Attachment.query.filter_by(task_id=task_id).all()
         return [self.schema.dump(attachment).data for attachment in attachments]
 
     def post(self, task_id):
         args = self.reqparse.parse_args()
-        new_attachment = models.Task(args['filename'], task_id)
+        new_attachment = models.Attachment(args['filename'], task_id)
         models.db.session.add(new_attachment)
         models.db.session.commit()
-        return self.full_schema.dump(new_attachment).data
+        return self.schema.dump(new_attachment).data
 
 
 class AttachmentAPI(Resource):
@@ -367,11 +366,11 @@ class AttachmentAPI(Resource):
         super(AttachmentAPI, self).__init__()
 
     def get(self, id):
-        attachment = models.Attachment.get(id)
+        attachment = models.Attachment.query.get(id)
         return self.schema.dump(attachment).data
 
     def delete(self, id):
-        attachment = models.Attachment.get(id)
+        attachment = models.Attachment.query.get(id)
         models.db.session.delete(attachment)
         models.db.session.commit()
         return {'status': 'ok'}
@@ -392,7 +391,7 @@ class TimeListAPI(Resource):
         super(TimeListAPI, self).__init__()
 
     def get(self, task_id):
-        times = models.Time.filter_by(task_id=task_id).all()
+        times = models.Time.query.filter_by(task_id=task_id).all()
         return [self.schema.dump(time).data for time in times]
 
     def post(self, task_id):
@@ -400,7 +399,7 @@ class TimeListAPI(Resource):
         new_time = models.Task(task_id, args['start'], args['stop'])
         models.db.session.add(new_time)
         models.db.session.commit()
-        return self.full_schema.dump(new_time).data
+        return self.schema.dump(new_time).data
 
 
 class TimeAPI(Resource):
@@ -418,7 +417,7 @@ class TimeAPI(Resource):
         super(TimeListAPI, self).__init__()
 
     def get(self, id):
-        time = models.Time.get(id)
+        time = models.Time.query.get(id)
         return self.schema.dump(time).data
 
     def put(self, id):
@@ -431,7 +430,7 @@ class TimeAPI(Resource):
         return {'status': 'ok'}
 
     def delete(self, id):
-        time = models.Time.get(id)
+        time = models.Time.query.get(id)
         models.db.session.delete(time)
         models.db.session.commit()
         return {'status': 'ok'}

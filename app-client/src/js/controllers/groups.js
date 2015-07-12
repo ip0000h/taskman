@@ -19,9 +19,18 @@ app.controller('GroupsController',
             });
         });
 
+        var findWithAttr = function(array, attr, value) {
+            for(var i = 0; i < array.length; i += 1) {
+                if(array[i][attr] === value) {
+                    return i;
+                }
+            }
+        };
+        
+        //root broadcast event changeGroupTasksCount
         $rootScope.$on('changeGroupTasksCount', function(event, data) {
-            var groupInd = data.groupId;
-            $scope.groups[groupInd].tasks_count += data.tasksCount;
+            var groupInd = findWithAttr($scope.groups, 'id', data.groupId);
+            $scope.groups[groupInd].tasks_count += data.mul * data.tasksCount;
         });
 
         //select current group

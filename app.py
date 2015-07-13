@@ -1,8 +1,7 @@
-from datetime import datetime
 from flask import Flask
 from flask import g, jsonify, render_template, send_from_directory
 from flask.ext.restful import Resource, Api
-from flask.ext.restful import reqparse
+from flask.ext.restful import inputs, reqparse
 from flask.ext.httpauth import HTTPBasicAuth
 
 import models
@@ -383,10 +382,10 @@ class TimeListAPI(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
         self.reqparse.add_argument(
-            'start', type=datetime, required=True,
+            'start', type=inputs.datetime_from_iso8601, required=True,
             help='No start time provided', location='json')
         self.reqparse.add_argument(
-            'stop', type=datetime, required=False, location='json')
+            'stop', type=inputs.datetime_from_iso8601, required=False, location='json')
         self.schema = serialize.TimeSchema()
         super(TimeListAPI, self).__init__()
 
@@ -396,7 +395,7 @@ class TimeListAPI(Resource):
 
     def post(self, task_id):
         args = self.reqparse.parse_args()
-        new_time = models.Task(task_id, args['start'], args['stop'])
+        new_time = models.Time(task_id, args['start'], args['stop'])
         models.db.session.add(new_time)
         models.db.session.commit()
         return self.schema.dump(new_time).data
@@ -409,10 +408,10 @@ class TimeAPI(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
         self.reqparse.add_argument(
-            'start', type=datetime, required=True,
+            'start', type=inputs.datetime_from_iso8601, required=True,
             help='No start time provided', location='json')
         self.reqparse.add_argument(
-            'stop', type=datetime, required=False, location='json')
+            'stop', type=inputs.datetime_from_iso8601, required=False, location='json')
         self.schema = serialize.TimeSchema()
         super(TimeListAPI, self).__init__()
 
@@ -436,6 +435,24 @@ class TimeAPI(Resource):
         return {'status': 'ok'}
 
 
+class TimesDeleteListApi(Resource):
+
+    decorators = [auth.login_required]
+
+    def __init__(self):
+        self.reqparse = reqparse.RequestParser()
+        self.reqparse.add_argument(
+            'id', type=int, required=True, action='append')
+        super(TimesDeleteListApi, self).__init__()
+
+    def post(self):
+        args = self.reqparse.parse_args()
+        models.Time.query.filter(
+            models.Time.id.in_(args['id'])).delete(synchronize_session='fetch')
+        models.db.session.commit()
+        return {'status': 'ok'}
+
+
 api.add_resource(UserListAPI, '/api/users', endpoint='users')
 api.add_resource(UserAPI, '/api/user/<int:id>', endpoint='user')
 api.add_resource(ProjectListAPI, '/api/projects', endpoint='projects')
@@ -449,6 +466,7 @@ api.add_resource(AttachmentListAPI, '/api/attachments/<int:task_id>', endpoint='
 api.add_resource(AttachmentAPI, '/api/attachment/<int:id>', endpoint='attachment')
 api.add_resource(TimeListAPI, '/api/times/<int:task_id>', endpoint='times')
 api.add_resource(TimeAPI, '/api/time/<int:id>', endpoint='time')
+api.add_resource(TimesDeleteListApi, '/api/times', endpoint='delete_times')
 
 
 if __name__ == "__main__":

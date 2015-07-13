@@ -70,7 +70,10 @@ app.factory('Times', ['$resource', function($resource) {
     return $resource(
         '/api/times/:taskId',
         null,
-        {'query': {method: 'GET', isArray: true}}
+        {
+            'query': {method: 'GET', isArray: true},
+            'remove': {method: 'POST'}
+        }
     );
 }]);
 

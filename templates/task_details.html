@@ -29,15 +29,16 @@
         <div ng-controller="TimesListController" class="col-md-6">
             <div class="btn-group items-actions">
               <button type="button" class="btn btn-default" ng-click="addTime()">
-                <span class="glyphicon glyphicon-plus"></span> Add Group
+                <span class="glyphicon glyphicon-plus"></span> Add Time
               </button>
               <div class="btn-group">
-                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                  Selected Time
+                <button type="button" class="btn btn-default dropdown-toggle"
+                 ng-disabled="selectedTimes.length == 0" data-toggle="dropdown">
+                  Selected Times
                   <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu">
-                  <li><a href="" ng-click="deleteTime()">
+                  <li><a href="" ng-click="deleteTimes()">
                   <span class="glyphicon glyphicon-trash"></span> Delete Times
                   </a></li>
                 </ul>
@@ -46,15 +47,22 @@
             <div class="panel panel-default">
                 <table class="table table-bordered">
                     <thead>
+                        <th width="1%">
+                          <input type="checkbox" ng-click="selectAllTimes()">
+                        </th>
                         <th>#</th>
                         <th>Start time</th>
                         <th>Stop time</th>
                     </thead>
                     <tbody>
                         <tr ng-repeat="time in times">
+                            <td>
+                              <input type="checkbox" ng-click="selectTime(time.id)" ng-model="time.selected">
+                            </td>
                             <td>{{time.id}}</td>
-                            <td>{{time.start}}</td>
-                            <td>{{time.stop}}</td>
+                            <td>{{time.start | datetz}}</td>
+                            <td ng-if="time.stop">{{time.stop | datetz}}</td>
+                            <td ng-if="!time.stop">No stop time</td>
                         </tr>
                     </tbody>
                 </table>
@@ -88,7 +96,7 @@
                         <tr ng-repeat="attachment in attachments">
                             <td>{{attachment.id}}</td>
                             <td>{{attachment.filename}}</td>
-                            <td>{{attachment.created}}</td>
+                            <td>{{attachment.created | datetz}}</td>
                         </tr>
                     </tbody>
                 </table>

@@ -3,7 +3,8 @@
 var app = angular.module('app', [
     'ngResource',
     'ngRoute',
-    'ui.bootstrap'
+    'ui.bootstrap',
+    'ui.bootstrap.datetimepicker'
     ]);
 
 

@@ -29,7 +29,7 @@ class TaskFullSchema(Schema):
     created = fields.DateTime()
     title = fields.Str()
     text = fields.Str()
-    status = fields.Str()
+    status_text = fields.Str()
     creator_id = fields.Integer()
     creator_username = fields.Str()
     assigned_id = fields.Integer()
@@ -43,16 +43,18 @@ class TaskShortSchema(Schema):
     created = fields.DateTime()
     updated = fields.DateTime()
     title = fields.Str()
-    status = fields.Str()
+    status_text = fields.Str()
 
 
 class AttachmentSchema(Schema):
     id = fields.Integer()
     created = fields.DateTime()
     filename = fields.Str()
+    user_text = fields.Str()
 
 
 class TimeSchema(Schema):
     id = fields.Integer()
     start = fields.DateTime()
     stop = fields.DateTime()
+    user_text = fields.Str()

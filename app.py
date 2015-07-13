@@ -3,6 +3,7 @@ from flask import g, jsonify, render_template, send_from_directory
 from flask.ext.restful import Resource, Api
 from flask.ext.restful import inputs, reqparse
 from flask.ext.httpauth import HTTPBasicAuth
+import werkzeug
 
 import models
 import serialize
@@ -259,7 +260,7 @@ class TaskListAPI(Resource):
     def post(self, group_id):
         args = self.reqparse.parse_args()
         new_task = models.Task(
-            args['title'], group_id, g.user.id, args['text'], args['status'], args['assigned'])
+            group_id, g.user.id, args['title'], args['text'], args['status'], args['assigned'])
         models.db.session.add(new_task)
         models.db.session.commit()
         return self.full_schema.dump(new_task).data
@@ -339,8 +340,7 @@ class AttachmentListAPI(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
         self.reqparse.add_argument(
-            'filename', type=str, required=True,
-            help='No attachment filename provided', location='json')
+            'file', type=werkzeug.datastructures.FileStorage, location='files')
         self.schema = serialize.AttachmentSchema()
         super(AttachmentListAPI, self).__init__()
 
@@ -350,7 +350,8 @@ class AttachmentListAPI(Resource):
 
     def post(self, task_id):
         args = self.reqparse.parse_args()
-        new_attachment = models.Attachment(args['filename'], task_id)
+        print(args['file'])
+        new_attachment = models.Attachment(task_id, g.user.id)
         models.db.session.add(new_attachment)
         models.db.session.commit()
         return self.schema.dump(new_attachment).data
@@ -375,6 +376,24 @@ class AttachmentAPI(Resource):
         return {'status': 'ok'}
 
 
+class AttachmentDeleteListApi(Resource):
+
+    decorators = [auth.login_required]
+
+    def __init__(self):
+        self.reqparse = reqparse.RequestParser()
+        self.reqparse.add_argument(
+            'id', type=int, required=True, action='append')
+        super(AttachmentDeleteListApi, self).__init__()
+
+    def post(self):
+        args = self.reqparse.parse_args()
+        models.Attachment.query.filter(
+            models.Attachment.id.in_(args['id'])).delete(synchronize_session='fetch')
+        models.db.session.commit()
+        return {'status': 'ok'}
+
+
 class TimeListAPI(Resource):
 
     decorators = [auth.login_required]
@@ -395,7 +414,7 @@ class TimeListAPI(Resource):
 
     def post(self, task_id):
         args = self.reqparse.parse_args()
-        new_time = models.Time(task_id, args['start'], args['stop'])
+        new_time = models.Time(task_id, g.user.id, args['start'], args['stop'])
         models.db.session.add(new_time)
         models.db.session.commit()
         return self.schema.dump(new_time).data
@@ -435,7 +454,7 @@ class TimeAPI(Resource):
         return {'status': 'ok'}
 
 
-class TimesDeleteListApi(Resource):
+class TimeDeleteListApi(Resource):
 
     decorators = [auth.login_required]
 
@@ -443,7 +462,7 @@ class TimesDeleteListApi(Resource):
         self.reqparse = reqparse.RequestParser()
         self.reqparse.add_argument(
             'id', type=int, required=True, action='append')
-        super(TimesDeleteListApi, self).__init__()
+        super(TimeDeleteListApi, self).__init__()
 
     def post(self):
         args = self.reqparse.parse_args()
@@ -455,18 +474,24 @@ class TimesDeleteListApi(Resource):
 
 api.add_resource(UserListAPI, '/api/users', endpoint='users')
 api.add_resource(UserAPI, '/api/user/<int:id>', endpoint='user')
+
 api.add_resource(ProjectListAPI, '/api/projects', endpoint='projects')
 api.add_resource(ProjectAPI, '/api/project/<int:id>', endpoint='project')
+
 api.add_resource(GroupListAPI, '/api/groups/<int:project_id>', endpoint='groups')
 api.add_resource(GroupAPI, '/api/group/<int:id>', endpoint='group')
+
 api.add_resource(TaskListAPI, '/api/tasks/<int:group_id>', endpoint='tasks')
 api.add_resource(TaskChangeListApi, '/api/tasks', endpoint='change_tasks')
 api.add_resource(TaskAPI, '/api/task/<int:id>', endpoint='task')
+
 api.add_resource(AttachmentListAPI, '/api/attachments/<int:task_id>', endpoint='attachments')
 api.add_resource(AttachmentAPI, '/api/attachment/<int:id>', endpoint='attachment')
+api.add_resource(AttachmentDeleteListApi, '/api/attachments', endpoint='delete_attachments')
+
 api.add_resource(TimeListAPI, '/api/times/<int:task_id>', endpoint='times')
 api.add_resource(TimeAPI, '/api/time/<int:id>', endpoint='time')
-api.add_resource(TimesDeleteListApi, '/api/times', endpoint='delete_times')
+api.add_resource(TimeDeleteListApi, '/api/times', endpoint='delete_times')
 
 
 if __name__ == "__main__":

@@ -78,7 +78,7 @@ app.controller('TimesListController',
 }]);
 
 //////////////////////////////////
-//add task controller
+//add time modal controller
 app.controller('AddTimeController',
     ['$scope', '$modalInstance', 'Times', 'taskId',
     function ($scope, $modalInstance, Times, taskId) {
@@ -119,7 +119,7 @@ app.controller('AddTimeController',
 }]);
 
 //////////////////////////////////
-//delete task modal controller
+//delete time modal controller
 app.controller('DeleteTimesController',
     ['$scope', '$modalInstance', 'Times', 'selectedTimes',
     function ($scope, $modalInstance, Times, selectedTimes) {

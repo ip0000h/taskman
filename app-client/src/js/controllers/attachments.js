@@ -2,16 +2,18 @@
 //////////////////////////////////
 //tasks list controller
 app.controller('AttachmentsListController',
-    ['$scope', '$routeParams', 'Attachments',
-    function ($scope, $routeParams, Attachments) {
-        $scope.selectedTimes = [];
-        $scope.attachment = Attachments.query({taskId: $routeParams.id});
+    ['$scope', '$routeParams', '$modal', 'Attachments',
+    function ($scope, $routeParams, $modal, Attachments) {
+        $scope.attachments = [];
+        $scope.selectedAttachments = [];
+        $scope.selectAll = false;
+        $scope.attachments = Attachments.query({taskId: $routeParams.id});
 
-        //add time
-        $scope.addTime = function() {
+        //add attachment
+        $scope.addAttachment = function() {
             var modalInstance = $modal.open({
-                templateUrl: 'templates/add_time.html',
-                controller: 'AddTimeController',
+                templateUrl: 'templates/add_attachment.html',
+                controller: 'AddAttachmentController',
                 resolve: {
                     taskId: function() {
                         return $routeParams.id;
@@ -19,44 +21,76 @@ app.controller('AttachmentsListController',
                 }
             });
             modalInstance.result.then(function(data) {
-                $scope.tasks.push(data);
+                $scope.attachments.push(data);
             });
         };
 
-        //delete tasks
-        $scope.deleteTimes = function() {
-            if ($scope.selectedTimes.length === 0) {
-                alert("No selected times");
+        //select attachment
+        $scope.selectAttachment = function(attachmentId) {
+            var position = $.inArray(attachmentId, $scope.selectedAttachments);
+            if (position + 1) {
+                $scope.selectedAttachments.splice(position, 1);
+                $scope.selectAll = false;
+            } else {
+                $scope.selectedAttachments.push(attachmentId);
+                $scope.selectAll = false;
+            }
+        };
+
+        //select all attachments
+        $scope.selectAllAttachments = function() {
+            $scope.selectedAttachments = [];
+            if ($scope.selectAll) {
+                $scope.selectAll = false;
+            } else {
+                $scope.selectAll = true;
+                $scope.attachments.forEach(function(item) {
+                    $scope.selectedAttachments.push(item.id);
+                });
+            }
+            $scope.attachments.forEach(function(item) {
+                item.selected = $scope.selectAll;
+            });
+        };
+
+        //delete attachments
+        $scope.deleteAttachments = function() {
+            if ($scope.selectedAttachments.length === 0) {
+                alert("No selected attachments");
                 return;
             }
             var modalInstance = $modal.open({
-                templateUrl: 'templates/delete_times.html',
-                controller: 'DeleteTimesController',
+                templateUrl: 'templates/delete_attachments.html',
+                controller: 'DeleteAttachmentsController',
                 resolve: {
-                    selectedTimes: function() {
-                        return $scope.selectedTimes;
+                    selectedAttachments: function() {
+                        return $scope.selectedAttachments;
                     }
                 }
+            });
+            modalInstance.result.then(function() {
+                $scope.attachments = $scope.attachments.filter(function(item) {
+                    return !item.selected;
+                });
+                $scope.selectedAttachments = [];
             });
         };
 }]);
 
 //////////////////////////////////
-//add task controller
-app.controller('AddTimeController',
-    ['$scope', '$modalInstance', 'Times', 'taskId',
-    function ($scope, $modalInstance, Times, taskId) {
+//add attachment modal controller
+app.controller('AddAttachmentController',
+    ['$scope', '$modalInstance', 'Attachments', 'taskId',
+    function ($scope, $modalInstance, Attachments, taskId) {
         $scope.input = {};
         $scope.taskId = taskId;
 
         $scope.ok = function() {
-            var newTime = {
-                'start': $scope.input.start,
-                'stop': $scope.input.stop,
-            };
-            var result = Times.save(
+            var fd = new FormData();
+            fd.append('file', $scope.upload.file);
+            var result = Attachments.save(
                 {taskId: $scope.taskId},
-                newTime
+                fd
             );
             $modalInstance.close(result);
         };
@@ -67,16 +101,16 @@ app.controller('AddTimeController',
 }]);
 
 //////////////////////////////////
-//delete task modal controller
-app.controller('DeleteTimesController',
-    ['$scope', '$modalInstance', 'Times', 'selectedTasks',
-    function ($scope, $modalInstance, Times, selectedTasks) {
-        $scope.selectedTasks = selectedTasks;
+//delete attachments modal controller
+app.controller('DeleteAttachmentsController',
+    ['$scope', '$modalInstance', 'Attachments', 'selectedAttachments',
+    function ($scope, $modalInstance, Attachments, selectedAttachments) {
+        $scope.selectedAttachments = selectedAttachments;
 
         $scope.ok = function() {
-            Tasks.remove(
+            Attachments.remove(
                 {},
-                {'id': $scope.selectedTasks}
+                {'id': $scope.selectedAttachments}
             );
             $modalInstance.close();
         };

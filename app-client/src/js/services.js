@@ -91,9 +91,12 @@ app.factory('Time', ['$resource', function($resource) {
 //times list service
 app.factory('Attachments', ['$resource', function($resource) {
     return $resource(
-        '/api/times/:taskId',
+        '/api/attachments/:taskId',
         null,
-        {'query': {method: 'GET', isArray: true}}
+        {
+            'query': {method: 'GET', isArray: true},
+            'remove': {method: 'POST'}
+        }
     );
 }]);
 
@@ -101,7 +104,7 @@ app.factory('Attachments', ['$resource', function($resource) {
 //group single service
 app.factory('Attachment', ['$resource', function($resource) {
     return $resource(
-        '/api/time/:attachmentId',
+        '/api/attachment/:attachmentId',
         null,
         {'update': {method:'PUT'}}
     );

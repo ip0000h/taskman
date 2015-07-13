@@ -15,16 +15,20 @@ class User(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
-    password = db.Column(db.String(255))
+    password = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(50), unique=True, nullable=True)
     jabber = db.Column(db.String(50), unique=True, nullable=True)
-    is_active = db.Column(db.Boolean)
-    is_admin = db.Column(db.Boolean)
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+    is_admin = db.Column(db.Boolean, nullable=False, default=False)
 
     created_tasks = db.relationship(
         'Task', backref='creator_user', lazy='dynamic', foreign_keys='Task.creator_id')
     assigned_tasks = db.relationship(
         'Task', backref='assign_user', lazy='dynamic', foreign_keys='Task.assigned_id')
+    attachments = db.relationship(
+        'Attachment', backref='user', lazy='dynamic', foreign_keys='Attachment.user_id')
+    times = db.relationship(
+        'Time', backref='user', lazy='dynamic', foreign_keys='Time.user_id')
 
     def __init__(self, username, password, email=None, jabber=None):
         self.username = username
@@ -39,7 +43,10 @@ class User(db.Model):
         return True
 
     def is_active(self):
-        return True
+        return self.is_active
+
+    def is_admin(self):
+        return self.is_admin
 
     def is_anonymous(self):
         return False
@@ -81,7 +88,8 @@ class Project(db.Model):
     name = db.Column(db.String(64), unique=True, nullable=False)
     created = db.Column(db.DateTime, nullable=False)
 
-    groups = db.relationship('Group', backref='projects', lazy='dynamic')
+    groups = db.relationship(
+        'Group', backref='project', cascade="all,delete", lazy='dynamic')
 
     def __init__(self, name, created=None):
         self.name = name
@@ -104,7 +112,8 @@ class Group(db.Model):
 
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
 
-    tasks = db.relationship('Task', backref='groups', lazy='dynamic')
+    tasks = db.relationship(
+        'Task', backref='group', cascade="all,delete", lazy='dynamic')
 
     def __init__(self, name, project_id, created=None):
         self.name = name
@@ -123,8 +132,7 @@ class Task(db.Model):
     __tablename__ = 'tasks'
 
     TASK_STATUS_CHOICES = (
-        (u'read', u'Read'),
-        (u'unread', u'Unread'),
+        (u'opened', u'Opened'),
         (u'closed', u'Closed'),
     )
 
@@ -139,22 +147,24 @@ class Task(db.Model):
     assigned_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), nullable=False)
 
-    attachments = db.relationship('Attachment', backref='tasks', lazy='dynamic')
-    times = db.relationship('Time', backref='tasks', lazy='dynamic')
+    attachments = db.relationship(
+        'Attachment', backref='task', cascade="all,delete", lazy='dynamic')
+    times = db.relationship(
+        'Time', backref='task', cascade="all,delete", lazy='dynamic')
 
     def __init__(
         self,
-        title,
         group_id,
         creator_id,
+        title,
         text=None,
-        status=u'read',
+        status=u'opened',
         assigned_id=None,
         created=None
     ):
-        self.title = title
         self.group_id = group_id
         self.creator_id = creator_id
+        self.title = title
         self.text = text
         self.status = status
         self.assigned_id = assigned_id
@@ -176,6 +186,14 @@ class Task(db.Model):
     def times_count(self):
         return self.times.count()
 
+    @property
+    def creator_username(self):
+        return self.creator_user.username
+
+    @property
+    def assigned_username(self):
+        return self.assigned_user.username
+
     def change_status(self, new_status):
         if new_status in [item[0] for item in self.TASK_STATUS_CHOICES]:
             self.status = new_status
@@ -188,17 +206,40 @@ class Attachment(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     created = db.Column(db.DateTime, nullable=False)
-    filename = db.Column(db.String(255), nullable=False)
 
     task_id = db.Column(db.Integer, db.ForeignKey('tasks.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
-    def __init__(self, filename, task_id, created=None):
-        self.filename = filename
+    files = db.relationship(
+        'AttachmentFile', backref='attachment', cascade="all,delete", lazy='dynamic')
+
+    def __init__(self, task_id, user_id, created=None):
         self.task_id = task_id
+        self.user_id = user_id
         self.created = datetime.datetime.utcnow() if created is None else created
 
     def __repr__(self):
         return '<Attachment {0}>'.format(self.id)
+
+    @property
+    def user_text(self):
+        return self.user.username
+
+
+class AttachmentFile(db.Model):
+    __tablename__ = 'attachment_files'
+
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(255), nullable=False)
+
+    attachment_id = db.Column(db.Integer, db.ForeignKey('attachments.id'), nullable=False)
+
+    def __init__(self, attachment_id, filename):
+        self.attachment_id = attachment_id
+        self.filename = filename
+
+    def __repr__(self):
+        return '<Attachment File {0}>'.format(self.id)
 
 
 class Time(db.Model):
@@ -209,11 +250,17 @@ class Time(db.Model):
     stop = db.Column(db.DateTime, nullable=True)
 
     task_id = db.Column(db.Integer, db.ForeignKey('tasks.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
-    def __init__(self, task_id, start=None, stop=None):
+    def __init__(self, task_id, user_id, start=None, stop=None):
         self.task_id = task_id
+        self.user_id = user_id
         self.start = datetime.datetime.utcnow() if start is None else start
         self.stop = stop
 
     def __repr__(self):
         return '<Time {0}>'.format(self.id)
+
+    @property
+    def user_text(self):
+        return self.user.username

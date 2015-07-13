@@ -15,7 +15,7 @@
                     <tbody>
                         <td>{{task.id}}</td>
                         <td>{{task.title}}</td>
-                        <td>{{task.status}}</td>
+                        <td>{{task.status_text}}</td>
                         <td>{{task.updated | datetz}}</td>
                         <td>{{task.created | datetz}}</td>
                         <td>{{task.creator_username}}</td>
@@ -53,6 +53,7 @@
                         <th>#</th>
                         <th>Start time</th>
                         <th>Stop time</th>
+                        <th>User</th>
                     </thead>
                     <tbody>
                         <tr ng-repeat="time in times">
@@ -63,6 +64,7 @@
                             <td>{{time.start | datetz}}</td>
                             <td ng-if="time.stop">{{time.stop | datetz}}</td>
                             <td ng-if="!time.stop">No stop time</td>
+                            <td>{{time.user_text}}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -74,12 +76,13 @@
                 <span class="glyphicon glyphicon-plus"></span> Add Attachment
               </button>
               <div class="btn-group">
-                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                <button type="button" class="btn btn-default dropdown-toggle"
+                ng-disabled="selectedAttachments.length == 0" data-toggle="dropdown">
                   Selected Attachments
                   <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu">
-                  <li><a href="" ng-click="deleteAttachment()">
+                  <li><a href="" ng-click="deleteAttachments()">
                   <span class="glyphicon glyphicon-trash"></span> Delete Attachments
                   </a></li>
                 </ul>
@@ -88,15 +91,23 @@
             <div class="panel panel-default">
                 <table class="table table-bordered">
                     <thead>
+                        <th width="1%">
+                          <input type="checkbox" ng-click="selectAllAttachments()">
+                        </th>
                         <th>#</th>
                         <th>Filename</th>
                         <th>Created</th>
+                        <th>User</th>
                     </thead>
                     <tbody>
                         <tr ng-repeat="attachment in attachments">
+                            <td>
+                              <input type="checkbox" ng-click="selectAttachment(attachment.id)" ng-model="attachment.selected">
+                            </td>
                             <td>{{attachment.id}}</td>
                             <td>{{attachment.filename}}</td>
                             <td>{{attachment.created | datetz}}</td>
+                            <td>{{attachment.user_text}}</td>
                         </tr>
                     </tbody>
                 </table>

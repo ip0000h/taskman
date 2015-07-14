@@ -1,5 +1,5 @@
 body {
-    background:url(../img/font.jpg);
+    background-color: #3A3A3A;
 }
 
 .items-actions {
@@ -52,4 +52,8 @@ label.checkbox {
 
 #loading-spin {
     min-height: 400px;
+}
+
+.navbar-right {
+    margin-right: 0px;
 }

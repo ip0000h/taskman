@@ -36,7 +36,6 @@ module.exports = function(grunt) {
 
       all: {
         dest: 'build/js/_bower.js',
-        cssDest: 'build/css/_bower.css',
       }
     },
 

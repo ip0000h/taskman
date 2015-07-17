@@ -80,18 +80,32 @@ app.controller('AttachmentsListController',
 //////////////////////////////////
 //add attachment modal controller
 app.controller('AddAttachmentController',
-    ['$scope', '$modalInstance', 'Attachments', 'taskId',
-    function ($scope, $modalInstance, Attachments, taskId) {
+    ['$scope', '$modalInstance', 'Upload', 'Attachments', 'taskId',
+    function ($scope, $modalInstance, Upload, Attachments, taskId) {
         $scope.input = {};
         $scope.taskId = taskId;
 
         $scope.ok = function() {
-            var fd = new FormData();
-            fd.append('file', $scope.upload.file);
-            var result = Attachments.save(
-                {taskId: $scope.taskId},
-                fd
-            );
+
+            $scope.$watch('files', function () {
+                $scope.upload($scope.input.files);
+            });
+
+            $scope.upload = function (files) {
+                if (files && files.length) {
+                    for (var i = 0; i < files.length; i++) {
+                        var file = files[i];
+                        Upload.upload({
+                            url: '/api/attachments',
+                            fields: {
+                                'username': $scope.username
+                            },
+                            file: file
+                        });
+                    };
+                };
+            };
+
             $modalInstance.close(result);
         };
 

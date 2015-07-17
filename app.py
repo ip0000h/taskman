@@ -340,7 +340,7 @@ class AttachmentListAPI(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
         self.reqparse.add_argument(
-            'file', type=werkzeug.datastructures.FileStorage, location='files')
+            'files', type=werkzeug.datastructures.FileStorage, location='files')
         self.schema = serialize.AttachmentSchema()
         super(AttachmentListAPI, self).__init__()
 

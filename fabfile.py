@@ -31,6 +31,7 @@ def setup(PROJECT_PATH):
         #setup global dependencies
         env.run('sudo apt-get update')
         add_os_package('nodejs')
+        add_os_package('npm')
         add_os_package('postgresql-server-dev-9.4')
         #create db role and database
         create_db_role()
@@ -42,12 +43,12 @@ def setup(PROJECT_PATH):
         #create a local user
         create_user(PROJECT_PATH)
         #setup javascript dependencies and collect static
-        env.run('npm install bower -g')
-        env.run('npm install brunch -g')
+        env.run('sudo npm install bower -g')
+        env.run('sudo npm install grunt -g')
         with cd('app-client'):
             env.run('npm install')
             env.run('bower install')
-            env.run('brunch')
+            env.run('grunt')
 
 
 #create a user

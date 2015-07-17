@@ -1,7 +1,6 @@
 from fabric.api import run, cd, local, task
 from fabric.state import env
 
-PROJECT_PATH = '/data/btadmin'
 PGSQL_USER = 'postgres'
 POSTGRESQL_EXECUTABLE_PATH = '/usr/bin/psql'
 PYTHON_EXECUTABLE_PATH = '/usr/bin/python3'
@@ -27,26 +26,41 @@ def add_os_package(name):
 
 #setup all(init db schema, run all migrations, create a user, start all apps)
 @task
-def setup():
+def setup(PROJECT_PATH):
     with cd(PROJECT_PATH):
+        #setup global dependencies
         env.run('sudo apt-get update')
+        env.run('curl -sL https://deb.nodesource.com/setup | bash -')
+        add_os_package('nodejs')
         add_os_package('postgresql-server-dev-9.4')
+        #create db role and database
+        create_db_role()
         create_db()
+        #setup python dependencies
         env.run('sudo {0} install -U -r requirements.txt'.format(PIP_EXECUTABLE_PATH))
-        upgrade_db()
-        create_user()
+        #upgrade migrations
+        upgrade_db(PROJECT_PATH)
+        #create a local user
+        create_user(PROJECT_PATH)
+        #setup javascript dependencies and collect static
+        env.run('npm install bower -g')
+        env.run('npm install brunch -g')
+        with cd('app-client'):
+            env.run('npm install')
+            env.run('bower install')
+            env.run('brunch')
 
 
 #create a user
 @task
-def create_user():
+def create_user(PROJECT_PATH):
     with cd(PROJECT_PATH):
         env.run('{0} manage.py create_user'.format(PYTHON_EXECUTABLE_PATH))
 
 
 #upgrade db
 @task
-def upgrade_db():
+def upgrade_db(PROJECT_PATH):
     with cd(PROJECT_PATH):
         env.run('{0} manage.py db upgrade'.format(PYTHON_EXECUTABLE_PATH))
 

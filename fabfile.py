@@ -30,7 +30,6 @@ def setup(PROJECT_PATH):
     with cd(PROJECT_PATH):
         #setup global dependencies
         env.run('sudo apt-get update')
-        env.run('curl -sL https://deb.nodesource.com/setup | bash -')
         add_os_package('nodejs')
         add_os_package('postgresql-server-dev-9.4')
         #create db role and database
@@ -82,3 +81,9 @@ def create_db_role():
 @task
 def drop_db():
     env.run('sudo -u {0} psql -c "DROP DATABASE {1}"'.format(PGSQL_USER, DB_NAME))
+
+
+#drop db role
+@task
+def drop_db_role():
+    env.run('sudo -u {0} psql -c "DROP USER {1}"'.format(PGSQL_USER, DB_USER))

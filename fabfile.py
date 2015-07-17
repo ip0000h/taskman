@@ -44,7 +44,7 @@ def setup(PROJECT_PATH):
         create_user(PROJECT_PATH)
         #setup javascript dependencies and collect static
         env.run('sudo npm install bower -g')
-        env.run('sudo npm install grunt -g')
+        env.run('sudo npm install grunt-cli -g')
         collect_static()
 
 
@@ -52,7 +52,6 @@ def setup(PROJECT_PATH):
 @task
 def collect_static():
     with lcd('client'):
-        env.run('ls')
         env.run('npm install')
         env.run('bower install')
         env.run('grunt')

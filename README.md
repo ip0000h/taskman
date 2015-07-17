@@ -8,3 +8,8 @@
 ### sudo apt-get install python-pip
 ### sudo apt-get install python3-pip
 ### sudo pip install fabric
+
+
+###if node is not available(which node returns empty string):
+### check nodejs and create a link:
+### sudo ln -s /usr/bin/nodejs /usr/bin/node

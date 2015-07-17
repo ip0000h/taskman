@@ -1,4 +1,4 @@
-from fabric.api import run, cd, local, task
+from fabric.api import run, lcd, cd, local, task
 from fabric.state import env
 
 PGSQL_USER = 'postgres'
@@ -45,10 +45,17 @@ def setup(PROJECT_PATH):
         #setup javascript dependencies and collect static
         env.run('sudo npm install bower -g')
         env.run('sudo npm install grunt -g')
-        with cd('app-client'):
-            env.run('npm install')
-            env.run('bower install')
-            env.run('grunt')
+        collect_static()
+
+
+#collect static
+@task
+def collect_static():
+    with lcd('client'):
+        env.run('ls')
+        env.run('npm install')
+        env.run('bower install')
+        env.run('grunt')
 
 
 #create a user

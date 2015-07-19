@@ -345,7 +345,8 @@ class AttachmentListAPI(Resource):
         super(AttachmentListAPI, self).__init__()
 
     def get(self, task_id):
-        attachments = models.Attachment.query.filter_by(task_id=task_id).all()
+        attachments = models.Attachment.query.filter_by(
+            task_id=task_id).join(models.Attachment.files)
         return [self.schema.dump(attachment).data for attachment in attachments]
 
     def post(self, task_id):
@@ -436,6 +437,8 @@ class FileAttachmentListAPI(Resource):
         new_a_file = models.AttachmentFile(attachment_id, upload_file.filename)
         models.db.session.add(new_a_file)
         models.db.session.commit()
+        if not new_a_file.save_file(args['file']):
+            abort(400, message="Failed writing file to the system.")
         return self.schema.dump(new_a_file).data
 
 

@@ -5,8 +5,6 @@
     <div class="modal-body">
         <form>
             <div class="form-group">
-              <label>Select files</label>
-              <div type="button" class="btn btn-default" ngf-select ng-model="input.files" ngf-multiple="true">Select</div>
               <div ngf-drop ngf-select ng-model="input.files" class="drop-box" 
                 ngf-drag-over-class="dragover" ngf-multiple="true" ngf-allow-dir="true">Drop files here
               </div>
@@ -15,7 +13,7 @@
                 <li ng-repeat="f in input.files" style="font:smaller">{{f.name}}</li>
               </ul>
             </div>
-            <div class="form-inline">
+            <div class="form-group">
               <label>Enter comment for attachment</label>
               <input type="text" class="form-control" placeholder="Enter comment" ng-model="input.comment">
             </div>

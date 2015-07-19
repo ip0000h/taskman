@@ -54,6 +54,7 @@
                         <th>Start time</th>
                         <th>Stop time</th>
                         <th>User</th>
+                        <th>Comment</th>
                     </thead>
                     <tbody>
                         <tr ng-repeat="time in times">
@@ -65,6 +66,7 @@
                             <td ng-if="time.stop">{{time.stop | datetz}}</td>
                             <td ng-if="!time.stop">No stop time</td>
                             <td>{{time.user_text}}</td>
+                            <td>{{time.comment}}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -95,9 +97,10 @@
                           <input type="checkbox" ng-click="selectAllAttachments()">
                         </th>
                         <th>#</th>
-                        <th>Filename</th>
+                        <th>Files</th>
                         <th>Created</th>
                         <th>User</th>
+                        <th>Comment</th>
                     </thead>
                     <tbody>
                         <tr ng-repeat="attachment in attachments">
@@ -105,9 +108,10 @@
                               <input type="checkbox" ng-click="selectAttachment(attachment.id)" ng-model="attachment.selected">
                             </td>
                             <td>{{attachment.id}}</td>
-                            <td>{{attachment.filename}}</td>
+                            <td><p ng-repeat="file in attachment.files">{{file}}</p></td>
                             <td>{{attachment.created | datetz}}</td>
                             <td>{{attachment.user_text}}</td>
+                            <td>{{attachment.comment}}</td>
                         </tr>
                     </tbody>
                 </table>

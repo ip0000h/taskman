@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.4.1
+ * @license AngularJS v1.4.3
  * (c) 2010-2015 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -57,7 +57,7 @@ function minErr(module, ErrorConstructor) {
       return match;
     });
 
-    message += '\nhttp://errors.angularjs.org/1.4.1/' +
+    message += '\nhttp://errors.angularjs.org/1.4.3/' +
       (module ? module + '/' : '') + code;
 
     for (i = SKIP_INDEXES, paramPrefix = '?'; i < templateArgs.length; i++, paramPrefix = '&') {
@@ -421,8 +421,12 @@ function baseExtend(dst, objs, deep) {
       var src = obj[key];
 
       if (deep && isObject(src)) {
-        if (!isObject(dst[key])) dst[key] = isArray(src) ? [] : {};
-        baseExtend(dst[key], [src], true);
+        if (isDate(src)) {
+          dst[key] = new Date(src.valueOf());
+        } else {
+          if (!isObject(dst[key])) dst[key] = isArray(src) ? [] : {};
+          baseExtend(dst[key], [src], true);
+        }
       } else {
         dst[key] = src;
       }
@@ -532,6 +536,11 @@ identity.$inject = [];
 
 
 function valueFn(value) {return function() {return value;};}
+
+function hasCustomToString(obj) {
+  return isFunction(obj.toString) && obj.toString !== Object.prototype.toString;
+}
+
 
 /**
  * @ngdoc function
@@ -2319,7 +2328,6 @@ function toDebugString(obj) {
   $$TestabilityProvider,
   $TimeoutProvider,
   $$RAFProvider,
-  $$AsyncCallbackProvider,
   $WindowProvider,
   $$jqLiteProvider,
   $$CookieReaderProvider
@@ -2341,11 +2349,11 @@ function toDebugString(obj) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.4.1',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.4.3',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 4,
-  dot: 1,
-  codeName: 'hyperionic-illumination'
+  dot: 3,
+  codeName: 'foam-acceleration'
 };
 
 
@@ -2480,7 +2488,6 @@ function publishExternalAPI(angular) {
         $timeout: $TimeoutProvider,
         $window: $WindowProvider,
         $$rAF: $$RAFProvider,
-        $$asyncCallback: $$AsyncCallbackProvider,
         $$jqLite: $$jqLiteProvider,
         $$HashMap: $$HashMapProvider,
         $$cookieReader: $$CookieReaderProvider
@@ -5401,7 +5408,7 @@ function Browser(window, document, $log, $sniffer) {
 
   function getHash(url) {
     var index = url.indexOf('#');
-    return index === -1 ? '' : url.substr(index + 1);
+    return index === -1 ? '' : url.substr(index);
   }
 
   /**
@@ -7746,7 +7753,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
       previousCompileContext = previousCompileContext || {};
 
       var terminalPriority = -Number.MAX_VALUE,
-          newScopeDirective,
+          newScopeDirective = previousCompileContext.newScopeDirective,
           controllerDirectives = previousCompileContext.controllerDirectives,
           newIsolateScopeDirective = previousCompileContext.newIsolateScopeDirective,
           templateDirective = previousCompileContext.templateDirective,
@@ -7912,6 +7919,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
           nodeLinkFn = compileTemplateUrl(directives.splice(i, directives.length - i), $compileNode,
               templateAttrs, jqCollection, hasTranscludeDirective && childTranscludeFn, preLinkFns, postLinkFns, {
                 controllerDirectives: controllerDirectives,
+                newScopeDirective: (newScopeDirective !== directive) && newScopeDirective,
                 newIsolateScopeDirective: newIsolateScopeDirective,
                 templateDirective: templateDirective,
                 nonTlbTranscludeDirective: nonTlbTranscludeDirective
@@ -8296,7 +8304,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
 
       $compileNode.empty();
 
-      $templateRequest($sce.getTrustedResourceUrl(templateUrl))
+      $templateRequest(templateUrl)
         .then(function(content) {
           var compileNode, tempTemplateAttrs, $template, childBoundTranscludeFn;
 
@@ -9356,7 +9364,7 @@ function $HttpProvider() {
    *
    * - **`defaults.cache`** - {Object} - an object built with {@link ng.$cacheFactory `$cacheFactory`}
    * that will provide the cache for all requests who set their `cache` property to `true`.
-   * If you set the `default.cache = false` then only requests that specify their own custom
+   * If you set the `defaults.cache = false` then only requests that specify their own custom
    * cache object will be cached. See {@link $http#caching $http Caching} for more information.
    *
    * - **`defaults.xsrfCookieName`** - {string} - Name of cookie containing the XSRF token.
@@ -9889,7 +9897,7 @@ function $HttpProvider() {
      *      XHR object. See [requests with credentials](https://developer.mozilla.org/docs/Web/HTTP/Access_control_CORS#Requests_with_credentials)
      *      for more information.
      *    - **responseType** - `{string}` - see
-     *      [requestType](https://developer.mozilla.org/en-US/docs/DOM/XMLHttpRequest#responseType).
+     *      [XMLHttpRequest.responseType](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest#xmlhttprequest-responsetype).
      *
      * @returns {HttpPromise} Returns a {@link ng.$q promise} object with the
      *   standard `then` method and two http specific methods: `success` and `error`. The `then`
@@ -11372,7 +11380,7 @@ function LocationHashbangUrl(appBase, hashPrefix) {
     var withoutBaseUrl = beginsWith(appBase, url) || beginsWith(appBaseNoFile, url);
     var withoutHashUrl;
 
-    if (withoutBaseUrl.charAt(0) === '#') {
+    if (!isUndefined(withoutBaseUrl) && withoutBaseUrl.charAt(0) === '#') {
 
       // The rest of the url starts with a hash so we have
       // got either a hashbang path or a plain hash fragment
@@ -11386,7 +11394,15 @@ function LocationHashbangUrl(appBase, hashPrefix) {
       // There was no hashbang path nor hash fragment:
       // If we are in HTML5 mode we use what is left as the path;
       // Otherwise we ignore what is left
-      withoutHashUrl = this.$$html5 ? withoutBaseUrl : '';
+      if (this.$$html5) {
+        withoutHashUrl = withoutBaseUrl;
+      } else {
+        withoutHashUrl = '';
+        if (isUndefined(withoutBaseUrl)) {
+          appBase = url;
+          this.replace();
+        }
+      }
     }
 
     parseAppUrl(withoutHashUrl, this);
@@ -17457,12 +17473,14 @@ var $compileMinErr = minErr('$compile');
  * @name $templateRequest
  *
  * @description
- * The `$templateRequest` service downloads the provided template using `$http` and, upon success,
- * stores the contents inside of `$templateCache`. If the HTTP request fails or the response data
- * of the HTTP request is empty, a `$compile` error will be thrown (the exception can be thwarted
- * by setting the 2nd parameter of the function to true).
+ * The `$templateRequest` service runs security checks then downloads the provided template using
+ * `$http` and, upon success, stores the contents inside of `$templateCache`. If the HTTP request
+ * fails or the response data of the HTTP request is empty, a `$compile` error will be thrown (the
+ * exception can be thwarted by setting the 2nd parameter of the function to true). Note that the
+ * contents of `$templateCache` are trusted, so the call to `$sce.getTrustedUrl(tpl)` is omitted
+ * when `tpl` is of type string and `$templateCache` has the matching entry.
  *
- * @param {string} tpl The HTTP request template URL
+ * @param {string|TrustedResourceUrl} tpl The HTTP request template URL
  * @param {boolean=} ignoreRequestError Whether or not to ignore the exception when the request fails or the template is empty
  *
  * @return {Promise} a promise for the HTTP response data of the given URL.
@@ -17470,9 +17488,18 @@ var $compileMinErr = minErr('$compile');
  * @property {number} totalPendingRequests total amount of pending template requests being downloaded.
  */
 function $TemplateRequestProvider() {
-  this.$get = ['$templateCache', '$http', '$q', function($templateCache, $http, $q) {
+  this.$get = ['$templateCache', '$http', '$q', '$sce', function($templateCache, $http, $q, $sce) {
     function handleRequestFn(tpl, ignoreRequestError) {
       handleRequestFn.totalPendingRequests++;
+
+      // We consider the template cache holds only trusted templates, so
+      // there's no need to go through whitelisting again for keys that already
+      // are included in there. This also makes Angular accept any script
+      // directive, no matter its name. However, we still need to unwrap trusted
+      // types.
+      if (!isString(tpl) || !$templateCache.get(tpl)) {
+        tpl = $sce.getTrustedResourceUrl(tpl);
+      }
 
       var transformResponse = $http.defaults && $http.defaults.transformResponse;
 
@@ -18249,10 +18276,6 @@ function filterFilter() {
 
     return Array.prototype.filter.call(array, predicateFn);
   };
-}
-
-function hasCustomToString(obj) {
-  return isFunction(obj.toString) && obj.toString !== Object.prototype.toString;
 }
 
 // Helper functions for `filterFilter`
@@ -19227,90 +19250,116 @@ function limitToFilter() {
 orderByFilter.$inject = ['$parse'];
 function orderByFilter($parse) {
   return function(array, sortPredicate, reverseOrder) {
+
     if (!(isArrayLike(array))) return array;
-    sortPredicate = isArray(sortPredicate) ? sortPredicate : [sortPredicate];
+
+    if (!isArray(sortPredicate)) { sortPredicate = [sortPredicate]; }
     if (sortPredicate.length === 0) { sortPredicate = ['+']; }
-    sortPredicate = sortPredicate.map(function(predicate) {
-      var descending = false, get = predicate || identity;
-      if (isString(predicate)) {
-        if ((predicate.charAt(0) == '+' || predicate.charAt(0) == '-')) {
-          descending = predicate.charAt(0) == '-';
-          predicate = predicate.substring(1);
-        }
-        if (predicate === '') {
-          // Effectively no predicate was passed so we compare identity
-          return reverseComparator(compare, descending);
-        }
-        get = $parse(predicate);
-        if (get.constant) {
-          var key = get();
-          return reverseComparator(function(a, b) {
-            return compare(a[key], b[key]);
-          }, descending);
-        }
-      }
-      return reverseComparator(function(a, b) {
-        return compare(get(a),get(b));
-      }, descending);
-    });
-    return slice.call(array).sort(reverseComparator(comparator, reverseOrder));
 
-    function comparator(o1, o2) {
-      for (var i = 0; i < sortPredicate.length; i++) {
-        var comp = sortPredicate[i](o1, o2);
-        if (comp !== 0) return comp;
-      }
-      return 0;
-    }
-    function reverseComparator(comp, descending) {
-      return descending
-          ? function(a, b) {return comp(b,a);}
-          : comp;
+    var predicates = processPredicates(sortPredicate, reverseOrder);
+
+    // The next three lines are a version of a Swartzian Transform idiom from Perl
+    // (sometimes called the Decorate-Sort-Undecorate idiom)
+    // See https://en.wikipedia.org/wiki/Schwartzian_transform
+    var compareValues = Array.prototype.map.call(array, getComparisonObject);
+    compareValues.sort(doComparison);
+    array = compareValues.map(function(item) { return item.value; });
+
+    return array;
+
+    function getComparisonObject(value, index) {
+      return {
+        value: value,
+        predicateValues: predicates.map(function(predicate) {
+          return getPredicateValue(predicate.get(value), index);
+        })
+      };
     }
 
-    function isPrimitive(value) {
-      switch (typeof value) {
-        case 'number': /* falls through */
-        case 'boolean': /* falls through */
-        case 'string':
-          return true;
-        default:
-          return false;
+    function doComparison(v1, v2) {
+      var result = 0;
+      for (var index=0, length = predicates.length; index < length; ++index) {
+        result = compare(v1.predicateValues[index], v2.predicateValues[index]) * predicates[index].descending;
+        if (result) break;
       }
-    }
-
-    function objectToString(value) {
-      if (value === null) return 'null';
-      if (typeof value.valueOf === 'function') {
-        value = value.valueOf();
-        if (isPrimitive(value)) return value;
-      }
-      if (typeof value.toString === 'function') {
-        value = value.toString();
-        if (isPrimitive(value)) return value;
-      }
-      return '';
-    }
-
-    function compare(v1, v2) {
-      var t1 = typeof v1;
-      var t2 = typeof v2;
-      if (t1 === t2 && t1 === "object") {
-        v1 = objectToString(v1);
-        v2 = objectToString(v2);
-      }
-      if (t1 === t2) {
-        if (t1 === "string") {
-           v1 = v1.toLowerCase();
-           v2 = v2.toLowerCase();
-        }
-        if (v1 === v2) return 0;
-        return v1 < v2 ? -1 : 1;
-      } else {
-        return t1 < t2 ? -1 : 1;
-      }
+      return result;
     }
   };
+
+  function processPredicates(sortPredicate, reverseOrder) {
+    reverseOrder = reverseOrder ? -1 : 1;
+    return sortPredicate.map(function(predicate) {
+      var descending = 1, get = identity;
+
+      if (isFunction(predicate)) {
+        get = predicate;
+      } else if (isString(predicate)) {
+        if ((predicate.charAt(0) == '+' || predicate.charAt(0) == '-')) {
+          descending = predicate.charAt(0) == '-' ? -1 : 1;
+          predicate = predicate.substring(1);
+        }
+        if (predicate !== '') {
+          get = $parse(predicate);
+          if (get.constant) {
+            var key = get();
+            get = function(value) { return value[key]; };
+          }
+        }
+      }
+      return { get: get, descending: descending * reverseOrder };
+    });
+  }
+
+  function isPrimitive(value) {
+    switch (typeof value) {
+      case 'number': /* falls through */
+      case 'boolean': /* falls through */
+      case 'string':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  function objectValue(value, index) {
+    // If `valueOf` is a valid function use that
+    if (typeof value.valueOf === 'function') {
+      value = value.valueOf();
+      if (isPrimitive(value)) return value;
+    }
+    // If `toString` is a valid function and not the one from `Object.prototype` use that
+    if (hasCustomToString(value)) {
+      value = value.toString();
+      if (isPrimitive(value)) return value;
+    }
+    // We have a basic object so we use the position of the object in the collection
+    return index;
+  }
+
+  function getPredicateValue(value, index) {
+    var type = typeof value;
+    if (value === null) {
+      type = 'string';
+      value = 'null';
+    } else if (type === 'string') {
+      value = value.toLowerCase();
+    } else if (type === 'object') {
+      value = objectValue(value, index);
+    }
+    return { value: value, type: type };
+  }
+
+  function compare(v1, v2) {
+    var result = 0;
+    if (v1.type === v2.type) {
+      if (v1.value !== v2.value) {
+        result = v1.value < v2.value ? -1 : 1;
+      }
+    } else {
+      result = v1.type < v2.type ? -1 : 1;
+    }
+    return result;
+  }
 }
 
 function ngDirective(directive) {
@@ -19564,6 +19613,13 @@ var htmlAnchorDirective = valueFn({
  * @priority 100
  *
  * @description
+ * Sets the `checked` attribute on the element, if the expression inside `ngChecked` is truthy.
+ *
+ * Note that this directive should not be used together with {@link ngModel `ngModel`},
+ * as this can lead to unexpected behavior.
+ *
+ * ### Why do we need `ngChecked`?
+ *
  * The HTML specification does not require browsers to preserve the values of boolean attributes
  * such as checked. (Their presence means true and their absence means false.)
  * If we put an Angular interpolation expression into such an attribute then the
@@ -19588,7 +19644,7 @@ var htmlAnchorDirective = valueFn({
  *
  * @element INPUT
  * @param {expression} ngChecked If the {@link guide/expression expression} is truthy,
- *     then special attribute "checked" will be set on the element
+ *     then the `checked` attribute will be set on the element
  */
 
 
@@ -21230,12 +21286,15 @@ var inputType = {
    * HTML radio button.
    *
    * @param {string} ngModel Assignable angular expression to data-bind to.
-   * @param {string} value The value to which the expression should be set when selected.
+   * @param {string} value The value to which the `ngModel` expression should be set when selected.
+   *    Note that `value` only supports `string` values, i.e. the scope model needs to be a string,
+   *    too. Use `ngValue` if you need complex models (`number`, `object`, ...).
    * @param {string=} name Property name of the form under which the control is published.
    * @param {string=} ngChange Angular expression to be executed when input changes due to user
    *    interaction with the input element.
-   * @param {string} ngValue Angular expression which sets the value to which the expression should
-   *    be set when selected.
+   * @param {string} ngValue Angular expression to which `ngModel` will be be set when the radio
+   *    is selected. Should be used instead of the `value` attribute if you need
+   *    a non-string `ngModel` (`boolean`, `array`, ...).
    *
    * @example
       <example name="radio-input-directive" module="radioExample">
@@ -23663,6 +23722,7 @@ forEach(
  * @ngdoc directive
  * @name ngIf
  * @restrict A
+ * @multiElement
  *
  * @description
  * The `ngIf` directive removes or recreates a portion of the DOM tree based on an
@@ -23961,8 +24021,8 @@ var ngIfDirective = ['$animate', function($animate) {
  * @param {Object} angularEvent Synthetic event object.
  * @param {String} src URL of content to load.
  */
-var ngIncludeDirective = ['$templateRequest', '$anchorScroll', '$animate', '$sce',
-                  function($templateRequest,   $anchorScroll,   $animate,   $sce) {
+var ngIncludeDirective = ['$templateRequest', '$anchorScroll', '$animate',
+                  function($templateRequest,   $anchorScroll,   $animate) {
   return {
     restrict: 'ECA',
     priority: 400,
@@ -23998,7 +24058,7 @@ var ngIncludeDirective = ['$templateRequest', '$anchorScroll', '$animate', '$sce
           }
         };
 
-        scope.$watch($sce.parseAsResourceUrl(srcExp), function ngIncludeWatchAction(src) {
+        scope.$watch(srcExp, function ngIncludeWatchAction(src) {
           var afterAnimation = function() {
             if (isDefined(autoScrollExp) && (!autoScrollExp || scope.$eval(autoScrollExp))) {
               $anchorScroll();
@@ -25953,20 +26013,41 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
       this.disabled = disabled;
     }
 
+    function getOptionValuesKeys(optionValues) {
+      var optionValuesKeys;
+
+      if (!keyName && isArrayLike(optionValues)) {
+        optionValuesKeys = optionValues;
+      } else {
+        // if object, extract keys, in enumeration order, unsorted
+        optionValuesKeys = [];
+        for (var itemKey in optionValues) {
+          if (optionValues.hasOwnProperty(itemKey) && itemKey.charAt(0) !== '$') {
+            optionValuesKeys.push(itemKey);
+          }
+        }
+      }
+      return optionValuesKeys;
+    }
+
     return {
       trackBy: trackBy,
       getTrackByValue: getTrackByValue,
-      getWatchables: $parse(valuesFn, function(values) {
+      getWatchables: $parse(valuesFn, function(optionValues) {
         // Create a collection of things that we would like to watch (watchedArray)
         // so that they can all be watched using a single $watchCollection
         // that only runs the handler once if anything changes
         var watchedArray = [];
-        values = values || [];
+        optionValues = optionValues || [];
 
-        Object.keys(values).forEach(function getWatchable(key) {
-          if (key.charAt(0) === '$') return;
-          var locals = getLocals(values[key], key);
-          var selectValue = getTrackByValueFn(values[key], locals);
+        var optionValuesKeys = getOptionValuesKeys(optionValues);
+        var optionValuesLength = optionValuesKeys.length;
+        for (var index = 0; index < optionValuesLength; index++) {
+          var key = (optionValues === optionValuesKeys) ? index : optionValuesKeys[index];
+          var value = optionValues[key];
+
+          var locals = getLocals(optionValues[key], key);
+          var selectValue = getTrackByValueFn(optionValues[key], locals);
           watchedArray.push(selectValue);
 
           // Only need to watch the displayFn if there is a specific label expression
@@ -25980,7 +26061,7 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
             var disableWhen = disableWhenFn(scope, locals);
             watchedArray.push(disableWhen);
           }
-        });
+        }
         return watchedArray;
       }),
 
@@ -25992,21 +26073,7 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
         // The option values were already computed in the `getWatchables` fn,
         // which must have been called to trigger `getOptions`
         var optionValues = valuesFn(scope) || [];
-        var optionValuesKeys;
-
-
-        if (!keyName && isArrayLike(optionValues)) {
-          optionValuesKeys = optionValues;
-        } else {
-          // if object, extract keys, in enumeration order, unsorted
-          optionValuesKeys = [];
-          for (var itemKey in optionValues) {
-            if (optionValues.hasOwnProperty(itemKey) && itemKey.charAt(0) !== '$') {
-              optionValuesKeys.push(itemKey);
-            }
-          }
-        }
-
+        var optionValuesKeys = getOptionValuesKeys(optionValues);
         var optionValuesLength = optionValuesKeys.length;
 
         for (var index = 0; index < optionValuesLength; index++) {
@@ -26622,6 +26689,7 @@ var ngPluralizeDirective = ['$locale', '$interpolate', '$log', function($locale,
 /**
  * @ngdoc directive
  * @name ngRepeat
+ * @multiElement
  *
  * @description
  * The `ngRepeat` directive instantiates a template once per item from a collection. Each template
@@ -27151,6 +27219,7 @@ var NG_HIDE_IN_PROGRESS_CLASS = 'ng-hide-animate';
 /**
  * @ngdoc directive
  * @name ngShow
+ * @multiElement
  *
  * @description
  * The `ngShow` directive shows or hides the given HTML element based on the expression
@@ -27326,6 +27395,7 @@ var ngShowDirective = ['$animate', function($animate) {
 /**
  * @ngdoc directive
  * @name ngHide
+ * @multiElement
  *
  * @description
  * The `ngHide` directive shows or hides the given HTML element based on the expression
@@ -28291,7 +28361,7 @@ var minlengthDirective = function() {
 
 })(window, document);
 
-!window.angular.$$csp() && window.angular.element(document).find('head').prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');;
+!window.angular.$$csp() && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');;
 /*
  * angular-ui-bootstrap
  * http://angular-ui.github.io/bootstrap/
@@ -33133,7 +33203,7 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
 }]);
 !angular.$$csp() && angular.element(document).find('head').prepend('<style type="text/css">.ng-animate.item:not(.left):not(.right){-webkit-transition:0s ease-in-out left;transition:0s ease-in-out left}</style>');;
 /**
- * @license AngularJS v1.4.1
+ * @license AngularJS v1.4.3
  * (c) 2010-2015 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -33348,7 +33418,8 @@ function shallowClearAndCopy(src, dst) {
  *   - non-GET instance actions:  `instance.$action([parameters], [success], [error])`
  *
  *
- *   Success callback is called with (value, responseHeaders) arguments. Error callback is called
+ *   Success callback is called with (value, responseHeaders) arguments, where the value is
+ *   the populated resource instance or collection object. The error callback is called
  *   with (httpResponse) argument.
  *
  *   Class actions return empty instance (with additional properties below).
@@ -33802,7 +33873,7 @@ angular.module('ngResource', ['ng']).
 })(window, window.angular);
 ;
 /**
- * @license AngularJS v1.4.1
+ * @license AngularJS v1.4.3
  * (c) 2010-2015 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -34215,7 +34286,9 @@ function $RouteProvider() {
      * @name $route#$routeChangeSuccess
      * @eventType broadcast on root scope
      * @description
-     * Broadcasted after a route dependencies are resolved.
+     * Broadcasted after a route change has happened successfully.
+     * The `resolve` dependencies are now available in the `current.locals` property.
+     *
      * {@link ngRoute.directive:ngView ngView} listens for the directive
      * to instantiate the controller and render the view.
      *
@@ -34399,9 +34472,8 @@ function $RouteProvider() {
                 if (angular.isFunction(templateUrl)) {
                   templateUrl = templateUrl(nextRoute.params);
                 }
-                templateUrl = $sce.getTrustedResourceUrl(templateUrl);
                 if (angular.isDefined(templateUrl)) {
-                  nextRoute.loadedTemplateUrl = templateUrl;
+                  nextRoute.loadedTemplateUrl = $sce.valueOf(templateUrl);
                   template = $templateRequest(templateUrl);
                 }
               }
@@ -46369,9 +46441,9 @@ if (typeof jQuery === 'undefined') {
 }(jQuery);
 ;
 // https://github.com/Gillardo/bootstrap-ui-datetime-picker
-// Version: 1.1.4
-// Released: 2015-07-09 
-angular.module("ui.bootstrap.datetimepicker",["ui.bootstrap.dateparser","ui.bootstrap.position"]).constant("uiDatetimePickerConfig",{dateFormat:"yyyy-MM-dd HH:mm",enableDate:!0,enableTime:!0,todayText:"Today",nowText:"Now",clearText:"Clear",closeText:"Done",dateText:"Date",timeText:"Time",closeOnDateSelection:!0,appendToBody:!1,showButtonBar:!0}).directive("datetimePicker",["$compile","$parse","$document","$timeout","$position","dateFilter","dateParser","uiDatetimePickerConfig",function(a,b,c,d,e,f,g,h){return{restrict:"A",require:"ngModel",scope:{isOpen:"=?",enableDate:"=?",enableTime:"=?",todayText:"@",nowText:"@",dateText:"@",timeText:"@",clearText:"@",closeText:"@",dateDisabled:"&"},link:function(d,i,j,k){function l(a){return a.replace(/([A-Z])/g,function(a){return"-"+a.toLowerCase()})}function m(a){return j.dateDisabled&&angular.isDefined(a)&&d.dateDisabled({date:a,mode:d.watchData.datepickerMode})}function n(a){if(a){if(angular.isDate(a)&&!isNaN(a))return k.$setValidity("date",!0),a;if(angular.isString(a)){var b=g.parse(a,p)||new Date(a);return isNaN(b)?void k.$setValidity("date",!1):(k.$setValidity("date",!0),b)}return void k.$setValidity("date",!1)}return k.$setValidity("date",!0),null}var o,p=h.dateFormat,q=angular.isDefined(j.closeOnDateSelection)?d.$parent.$eval(j.closeOnDateSelection):h.closeOnDateSelection,r=angular.isDefined(j.datepickerAppendToBody)?d.$parent.$eval(j.datepickerAppendToBody):h.appendToBody;d.showButtonBar=angular.isDefined(j.showButtonBar)?d.$parent.$eval(j.showButtonBar):h.showButtonBar,d.enableDate=angular.isDefined(d.enableDate)?d.enableDate:h.enableDate,d.enableTime=angular.isDefined(d.enableTime)?d.enableTime:h.enableTime,d.showPicker=d.enableDate?"date":"time",d.getText=function(a){return d[a+"Text"]||h[a+"Text"]},j.$observe("datetimePicker",function(a){p=a||h.dateFormat,k.$render()});var s=angular.element('<div date-picker-wrap ng-show="showPicker == \'date\'"><div datepicker></div></div><div time-picker-wrap ng-show="showPicker == \'time\'"><div timepicker style="margin:0 auto"></div></div>');s.attr({"ng-model":"date","ng-change":"dateSelection()"});var t=angular.element(s.children()[0]);j.datepickerOptions&&angular.forEach(d.$parent.$eval(j.datepickerOptions),function(a,b){t.attr(l(b),a)});var u=angular.element(s.children()[1]);j.timepickerOptions&&angular.forEach(d.$parent.$eval(j.timepickerOptions),function(a,b){u.attr(l(b),a)}),j.datepickerMode||(j.datepickerMode="day"),d.watchData={},angular.forEach(["minDate","maxDate","datepickerMode"],function(a){if(j[a]){var c=b(j[a]);if(d.$parent.$watch(c,function(b){d.watchData[a]=b}),t.attr(l(a),"watchData."+a),"datepickerMode"===a){var e=c.assign;d.$watch("watchData."+a,function(a,b){a!==b&&e(d.$parent,a)})}}}),j.dateDisabled&&t.attr("date-disabled","dateDisabled({ date: date, mode: mode })"),k.$parsers.unshift(n),d.dateSelection=function(a){d.enableDate&&d.enableTime&&"time"===d.showPicker&&o&&null!==o&&(null!==d.date||a||null!=a)&&(a&&null!=a?(o.setHours(a.getHours()),o.setMinutes(a.getMinutes()),o.setSeconds(a.getSeconds()),o.setMilliseconds(a.getMilliseconds()),a=new Date(o)):(o.setHours(d.date.getHours()),o.setMinutes(d.date.getMinutes()),o.setSeconds(d.date.getSeconds()),o.setMilliseconds(d.date.getMilliseconds()))),angular.isDefined(a)&&(d.date=a),o=d.date,k.$setViewValue(d.date),k.$render(),null===a?d.close():q&&"time"!=d.showPicker&&(d.enableTime?d.showPicker="time":d.close())},i.bind("input change keyup",function(){d.$apply(function(){d.date=k.$modelValue})}),k.$render=function(){var a=k.$viewValue?n(k.$viewValue):null,b=a?f(a,p):"";i.val(b),d.date=a};var v=function(a){d.isOpen&&a.target!==i[0]&&d.$apply(function(){d.isOpen=!1})},w=function(a){d.keydown(a)};i.bind("keydown",w),d.keydown=function(a){27===a.which?(a.preventDefault(),d.isOpen&&a.stopPropagation(),d.close()):40!==a.which||d.isOpen||(d.isOpen=!0)},d.$watch("isOpen",function(a){a?(d.$broadcast("datepicker.focus"),d.position=r?e.offset(i):e.position(i),d.position.top=d.position.top+i.prop("offsetHeight"),c.bind("mousedown",v)):c.unbind("mousedown",v)}),d.isTodayDisabled=function(){return m(new Date)},d.select=function(a){if("today"===a||"now"==a){var b=new Date;angular.isDate(k.$modelValue)?(a=new Date(k.$modelValue),a.setFullYear(b.getFullYear(),b.getMonth(),b.getDate()),a.setHours(b.getHours(),b.getMinutes(),b.getSeconds(),b.getMilliseconds())):a=b}d.dateSelection(a)},d.close=function(){d.isOpen=!1,i[0].focus()},d.changePicker=function(a){d.showPicker=a};var x=a(s)(d);s.remove(),r?c.find("body").append(x):i.after(x),d.$on("$destroy",function(){x.remove(),i.unbind("keydown",w),c.unbind("mousedown",v)})}}}]).directive("datePickerWrap",function(){return{restrict:"EA",replace:!0,transclude:!0,templateUrl:"template/datetime-picker.html",link:function(a,b){b.bind("mousedown",function(a){a.preventDefault(),a.stopPropagation()})}}}).directive("timePickerWrap",function(){return{restrict:"EA",replace:!0,transclude:!0,templateUrl:"template/datetime-picker.html",link:function(a,b){b.bind("mousedown",function(a){a.preventDefault(),a.stopPropagation()})}}}),angular.module("ui.bootstrap.datetimepicker").run(["$templateCache",function(a){"use strict";a.put("template/datetime-picker.html","<ul class=\"dropdown-menu dropdown-menu-left datetime-picker-dropdown\" ng-style=\"{display: (isOpen && 'block') || 'none', top: position.top+'px', left: position.left+'px'}\" style=left:inherit ng-keydown=keydown($event)><li style=\"padding:0 5px 5px 5px\" ng-class=\"{'date-picker-menu': showPicker == 'date', 'time-picker-menu' : showPicker == 'time'}\"><div ng-transclude></div></li><li ng-if=showButtonBar style=padding:5px><span class=\"btn-group pull-left\" style=margin-right:10px><button ng-if=\"showPicker == 'date'\" type=button class=\"btn btn-sm btn-info\" ng-click=\"select('today')\" ng-disabled=isTodayDisabled()>{{ getText('today') }}</button> <button ng-if=\"showPicker == 'time'\" type=button class=\"btn btn-sm btn-info\" ng-click=\"select('now')\" ng-disabled=isTodayDisabled()>{{ getText('now') }}</button> <button type=button class=\"btn btn-sm btn-danger\" ng-click=select(null)>{{ getText('clear') }}</button></span> <span class=\"btn-group pull-right\"><button ng-if=\"showPicker == 'date' && enableTime\" type=button class=\"btn btn-sm btn-default\" ng-click=\"changePicker('time')\">{{ getText('time')}}</button> <button ng-if=\"showPicker == 'time' && enableDate\" type=button class=\"btn btn-sm btn-default\" ng-click=\"changePicker('date')\">{{ getText('date')}}</button> <button type=button class=\"btn btn-sm btn-success\" ng-click=close()>{{ getText('close') }}</button></span></li></ul>")}]);;
+// Version: 1.1.5
+// Released: 2015-07-17 
+angular.module("ui.bootstrap.datetimepicker",["ui.bootstrap.dateparser","ui.bootstrap.position"]).constant("uiDatetimePickerConfig",{dateFormat:"yyyy-MM-dd HH:mm",enableDate:!0,enableTime:!0,todayText:"Today",nowText:"Now",clearText:"Clear",closeText:"Done",dateText:"Date",timeText:"Time",closeOnDateSelection:!0,appendToBody:!1,showButtonBar:!0}).directive("datetimePicker",["$compile","$parse","$document","$timeout","$position","dateFilter","dateParser","uiDatetimePickerConfig",function(a,b,c,d,e,f,g,h){return{restrict:"A",require:"ngModel",scope:{isOpen:"=?",enableDate:"=?",enableTime:"=?",todayText:"@",nowText:"@",dateText:"@",timeText:"@",clearText:"@",closeText:"@",dateDisabled:"&"},link:function(d,i,j,k){function l(a){return a.replace(/([A-Z])/g,function(a){return"-"+a.toLowerCase()})}function m(a){return j.dateDisabled&&angular.isDefined(a)&&d.dateDisabled({date:a,mode:d.watchData.datepickerMode})}function n(a){if(a){if(angular.isDate(a)&&!isNaN(a))return k.$setValidity("date",!0),a;if(angular.isString(a)){var b=g.parse(a,p)||new Date(a);return isNaN(b)?void k.$setValidity("date",!1):(k.$setValidity("date",!0),b)}return void k.$setValidity("date",!1)}return k.$setValidity("date",!0),null}var o,p=h.dateFormat,q=angular.isDefined(j.closeOnDateSelection)?d.$parent.$eval(j.closeOnDateSelection):h.closeOnDateSelection,r=angular.isDefined(j.datepickerAppendToBody)?d.$parent.$eval(j.datepickerAppendToBody):h.appendToBody;d.showButtonBar=angular.isDefined(j.showButtonBar)?d.$parent.$eval(j.showButtonBar):h.showButtonBar,d.enableDate=angular.isDefined(d.enableDate)?d.enableDate:h.enableDate,d.enableTime=angular.isDefined(d.enableTime)?d.enableTime:h.enableTime,d.showPicker=d.enableDate?"date":"time",d.getText=function(a){return d[a+"Text"]||h[a+"Text"]},j.$observe("datetimePicker",function(a){p=a||h.dateFormat,k.$render()});var s=angular.element('<div date-picker-wrap ng-show="showPicker == \'date\'"><div datepicker></div></div><div time-picker-wrap ng-show="showPicker == \'time\'"><div timepicker style="margin:0 auto"></div></div>');s.attr({"ng-model":"date","ng-change":"dateSelection()"});var t=angular.element(s.children()[0]);j.datepickerOptions&&angular.forEach(d.$parent.$eval(j.datepickerOptions),function(a,b){t.attr(l(b),a)});var u=angular.element(s.children()[1]);j.timepickerOptions&&angular.forEach(d.$parent.$eval(j.timepickerOptions),function(a,b){u.attr(l(b),a)}),angular.isDefined(j.datepickerMode)||(j.datepickerMode="day"),d.watchData={},angular.forEach(["minDate","maxDate","datepickerMode"],function(a){if(j[a]){var c=b(j[a]);if(d.$parent.$watch(c,function(b){d.watchData[a]=b}),t.attr(l(a),"watchData."+a),"datepickerMode"===a){var e=c.assign;d.$watch("watchData."+a,function(a,b){angular.isFunction(e)&&a!==b&&e(d.$parent,a)})}}}),j.dateDisabled&&t.attr("date-disabled","dateDisabled({ date: date, mode: mode })"),k.$parsers.unshift(n),d.dateSelection=function(a){d.enableDate&&d.enableTime&&"time"===d.showPicker&&o&&null!==o&&(null!==d.date||a||null!=a)&&(a&&null!=a?(o.setHours(a.getHours()),o.setMinutes(a.getMinutes()),o.setSeconds(a.getSeconds()),o.setMilliseconds(a.getMilliseconds()),a=new Date(o)):(o.setHours(d.date.getHours()),o.setMinutes(d.date.getMinutes()),o.setSeconds(d.date.getSeconds()),o.setMilliseconds(d.date.getMilliseconds()))),angular.isDefined(a)&&(d.date=a),o=d.date,k.$setViewValue(d.date),k.$render(),null===a?d.close():q&&"time"!=d.showPicker&&(d.enableTime?d.showPicker="time":d.close())},i.bind("input change keyup",function(){d.$apply(function(){d.date=k.$modelValue})}),k.$render=function(){var a=k.$viewValue?n(k.$viewValue):null,b=a?f(a,p):"";i.val(b),d.date=a};var v=function(a){d.isOpen&&a.target!==i[0]&&d.$apply(function(){d.isOpen=!1})},w=function(a){d.keydown(a)};i.bind("keydown",w),d.keydown=function(a){27===a.which?(a.preventDefault(),d.isOpen&&a.stopPropagation(),d.close()):40!==a.which||d.isOpen||(d.isOpen=!0)},d.$watch("isOpen",function(a){if(d.dropdownStyle={display:a?"block":"none"},a){d.$broadcast("datepicker.focus");var b=r?e.offset(i):e.position(i);d.dropdownStyle.top=r?b.top+i.prop("offsetHeight")+"px":void 0,d.dropdownStyle.left=b.left+"px",c.bind("click",v)}else c.unbind("click",v)}),d.isTodayDisabled=function(){return m(new Date)},d.select=function(a){if("today"===a||"now"==a){var b=new Date;angular.isDate(k.$modelValue)?(a=new Date(k.$modelValue),a.setFullYear(b.getFullYear(),b.getMonth(),b.getDate()),a.setHours(b.getHours(),b.getMinutes(),b.getSeconds(),b.getMilliseconds())):a=b}d.dateSelection(a)},d.close=function(){d.isOpen=!1,i[0].focus()},d.changePicker=function(a){d.showPicker=a};var x=a(s)(d);s.remove(),r?c.find("body").append(x):i.after(x),d.$on("$destroy",function(){x.remove(),i.unbind("keydown",w),c.unbind("click",v)})}}}]).directive("datePickerWrap",function(){return{restrict:"EA",replace:!0,transclude:!0,templateUrl:"template/datetime-picker.html",link:function(a,b){b.bind("click",function(a){a.preventDefault(),a.stopPropagation()})}}}).directive("timePickerWrap",function(){return{restrict:"EA",replace:!0,transclude:!0,templateUrl:"template/datetime-picker.html",link:function(a,b){b.bind("click",function(a){a.preventDefault(),a.stopPropagation()})}}}),angular.module("ui.bootstrap.datetimepicker").run(["$templateCache",function(a){"use strict";a.put("template/datetime-picker.html",'<ul class="dropdown-menu dropdown-menu-left datetime-picker-dropdown" ng-style=dropdownStyle style=left:inherit ng-keydown=keydown($event)><li style="padding:0 5px 5px 5px" ng-class="{\'date-picker-menu\': showPicker == \'date\', \'time-picker-menu\' : showPicker == \'time\'}"><div ng-transclude></div></li><li ng-if=showButtonBar style=padding:5px><span class="btn-group pull-left" style=margin-right:10px><button ng-if="showPicker == \'date\'" type=button class="btn btn-sm btn-info" ng-click="select(\'today\')" ng-disabled=isTodayDisabled()>{{ getText(\'today\') }}</button> <button ng-if="showPicker == \'time\'" type=button class="btn btn-sm btn-info" ng-click="select(\'now\')" ng-disabled=isTodayDisabled()>{{ getText(\'now\') }}</button> <button type=button class="btn btn-sm btn-danger" ng-click=select(null)>{{ getText(\'clear\') }}</button></span> <span class="btn-group pull-right"><button ng-if="showPicker == \'date\' && enableTime" type=button class="btn btn-sm btn-default" ng-click="changePicker(\'time\')">{{ getText(\'time\')}}</button> <button ng-if="showPicker == \'time\' && enableDate" type=button class="btn btn-sm btn-default" ng-click="changePicker(\'date\')">{{ getText(\'date\')}}</button> <button type=button class="btn btn-sm btn-success" ng-click=close()>{{ getText(\'close\') }}</button></span></li></ul>')}]);;
 //! moment.js
 //! version : 2.10.3
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -50265,12 +50337,14 @@ app.controller('AttachmentsListController',
                 }
             });
             modalInstance.result.then(function(data) {
-                $scope.attachments.push(data);
+                console.log(data);
+                // $scope.attachments.push(data);
             });
         };
 
         //select attachment
         $scope.selectAttachment = function(attachmentId) {
+            console.log($scope.attachments);
             var position = $.inArray(attachmentId, $scope.selectedAttachments);
             if (position + 1) {
                 $scope.selectedAttachments.splice(position, 1);
@@ -50335,6 +50409,8 @@ app.controller('AddAttachmentController',
                 $scope.upload($scope.input.files);
             });
 
+            var result={};
+
             $scope.upload = function (files) {
                 if (files && files.length) {
                     $scope.new_attachment = Attachments.save(
@@ -50343,14 +50419,16 @@ app.controller('AddAttachmentController',
                     );
                     $scope.new_attachment.$promise.then(
                         function (value) {
-                            console.log(value);
+                            result.data = $scope.new_attachment;
+                            result.files = Array();
                             for (var i = 0; i < files.length; i++) {
                                 var file = files[i];
-                                console.log(file);
-                                Upload.upload({
-                                    url: '/api/uploads/'+ $scope.new_attachment.id,
-                                    files: file
+                                var response= Upload.upload({
+                                    url: '/api/uploads/' + $scope.new_attachment.id,
+                                    file: file
                                 });
+                                result.files.push(response);
+                                console.log(response);
                             }
                         },
                         function (error) {

@@ -21,12 +21,14 @@ app.controller('AttachmentsListController',
                 }
             });
             modalInstance.result.then(function(data) {
-                $scope.attachments.push(data);
+                console.log(data);
+                // $scope.attachments.push(data);
             });
         };
 
         //select attachment
         $scope.selectAttachment = function(attachmentId) {
+            console.log($scope.attachments);
             var position = $.inArray(attachmentId, $scope.selectedAttachments);
             if (position + 1) {
                 $scope.selectedAttachments.splice(position, 1);
@@ -91,6 +93,8 @@ app.controller('AddAttachmentController',
                 $scope.upload($scope.input.files);
             });
 
+            var result={};
+
             $scope.upload = function (files) {
                 if (files && files.length) {
                     $scope.new_attachment = Attachments.save(
@@ -99,14 +103,16 @@ app.controller('AddAttachmentController',
                     );
                     $scope.new_attachment.$promise.then(
                         function (value) {
-                            console.log(value);
+                            result.data = $scope.new_attachment;
+                            result.files = Array();
                             for (var i = 0; i < files.length; i++) {
                                 var file = files[i];
-                                console.log(file);
-                                Upload.upload({
-                                    url: '/api/uploads/'+ $scope.new_attachment.id,
-                                    files: file
+                                var response= Upload.upload({
+                                    url: '/api/uploads/' + $scope.new_attachment.id,
+                                    file: file
                                 });
+                                result.files.push(response);
+                                console.log(response);
                             }
                         },
                         function (error) {

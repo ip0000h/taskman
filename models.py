@@ -1,4 +1,6 @@
 import datetime
+import os
+from sqlalchemy import event
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.bcrypt import generate_password_hash, check_password_hash
 from sqlalchemy_utils.types.choice import ChoiceType
@@ -212,13 +214,15 @@ class Attachment(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     files = db.relationship(
-        'AttachmentFile', cascade="all,delete", lazy='dynamic')
+        'AttachmentFile', backref='attachment', cascade="all,delete", lazy='dynamic')
 
     def __init__(self, task_id, user_id, comment=None, created=None):
         self.task_id = task_id
         self.comment = comment
         self.user_id = user_id
         self.created = datetime.datetime.utcnow() if created is None else created
+        if not os.path.exists(self.get_dir_path):
+            os.makedirs(self.get_dir_path)
 
     def __repr__(self):
         return '<Attachment {0}>'.format(self.id)
@@ -230,6 +234,25 @@ class Attachment(db.Model):
     @property
     def files_count(self):
         return self.files.count()
+
+    @property
+    def get_dir_path(self):
+        return os.path.join(
+            AppConfig.UPLOAD_FOLDER,
+            'attachments',
+            str(self.user_id),
+            self.created.strftime("%Y_%m_%d_%H_%M_%S")
+        )
+
+
+def attachment_after_delete_listener(mapper, connection, target):
+    try:
+        os.rmdir(target.get_dir_path)
+    except Exception as e:
+        print("Error: Unknown error occurred: {0}".format(e))
+
+event.listen(
+    Attachment, 'after_delete', attachment_after_delete_listener)
 
 
 class AttachmentFile(db.Model):
@@ -246,6 +269,33 @@ class AttachmentFile(db.Model):
 
     def __repr__(self):
         return '<Attachment File {0}>'.format(self.id)
+
+    @property
+    def get_file_path(self):
+        return os.path.join(
+            self.attachment.get_dir_path,
+            self.filename)
+
+    def save_file(self, file_obj):
+        file_bytes = file_obj.read(AppConfig.MAX_FILE_SIZE)
+        if len(file_bytes) == AppConfig.MAX_FILE_SIZE:
+            print('Update file bigger than MAX_FILE_SIZE: {0} bytes'.format(
+                AppConfig.MAX_FILE_SIZE))
+            return False
+        f = open(self.get_file_path, 'wb')
+        f.write(file_bytes)
+        f.close()
+        return True
+
+
+def attachment_file_after_delete_listener(mapper, connection, target):
+    try:
+        os.remove(target.get_file_path)
+    except Exception as e:
+        print("Error: Unknown error occurred: {0}".format(e))
+
+event.listen(
+    AttachmentFile, 'after_delete', attachment_file_after_delete_listener)
 
 
 class Time(db.Model):

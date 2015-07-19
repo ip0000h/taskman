@@ -46,16 +46,17 @@ class TaskShortSchema(Schema):
     status_text = fields.Str()
 
 
+class AttachmentFileSchema(Schema):
+    id = fields.Integer()
+    filename = fields.Str()
+
+
 class AttachmentSchema(Schema):
     id = fields.Integer()
     created = fields.DateTime()
     comment = fields.Str()
     user_text = fields.Str()
-
-
-class AttachmentFileSchema(Schema):
-    id = fields.Integer()
-    filename = fields.Str()
+    files = fields.Nested(AttachmentFileSchema, only='filename', many=True)
 
 
 class TimeSchema(Schema):

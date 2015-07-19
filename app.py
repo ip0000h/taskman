@@ -1,9 +1,9 @@
 from flask import Flask
-from flask import g, jsonify, render_template, send_from_directory
+from flask import abort, g, jsonify, render_template, send_from_directory
 from flask.ext.restful import Resource, Api
 from flask.ext.restful import inputs, reqparse
 from flask.ext.httpauth import HTTPBasicAuth
-import werkzeug
+from werkzeug.datastructures import FileStorage
 
 import models
 import serialize
@@ -340,7 +340,7 @@ class AttachmentListAPI(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
         self.reqparse.add_argument(
-            'files', type=werkzeug.datastructures.FileStorage, location='files')
+            'comment', type=str, required=False, location='json')
         self.schema = serialize.AttachmentSchema()
         super(AttachmentListAPI, self).__init__()
 
@@ -350,8 +350,7 @@ class AttachmentListAPI(Resource):
 
     def post(self, task_id):
         args = self.reqparse.parse_args()
-        print(args['file'])
-        new_attachment = models.Attachment(task_id, g.user.id)
+        new_attachment = models.Attachment(task_id, g.user.id, args['comment'])
         models.db.session.add(new_attachment)
         models.db.session.commit()
         return self.schema.dump(new_attachment).data
@@ -388,10 +387,56 @@ class AttachmentDeleteListApi(Resource):
 
     def post(self):
         args = self.reqparse.parse_args()
-        models.Attachment.query.filter(
-            models.Attachment.id.in_(args['id'])).delete(synchronize_session='fetch')
+        attachments = models.Attachment.query.filter(
+            models.Attachment.id.in_(args['id'])).all()
+        for attachment in attachments:
+            models.db.session.delete(attachment)
         models.db.session.commit()
         return {'status': 'ok'}
+
+
+class FileStorageArgument(reqparse.Argument):
+    """This argument class for flask-restful will be used in
+    all cases where file uploads need to be handled."""
+
+    def convert(self, value, op):
+        if self.type is FileStorage:  # only in the case of files
+            # this is done as self.type(value) makes the name attribute of the
+            # FileStorage object same as argument name and value is a FileStorage
+            # object itself anyways
+            return value
+
+        # called so that this argument class will also be useful in
+        # cases when argument type is not a file.
+        super(FileStorageArgument, self).convert(*args, **kwargs)
+
+
+class FileAttachmentListAPI(Resource):
+
+    decorators = [auth.login_required]
+
+    def __init__(self):
+        self.reqparse = reqparse.RequestParser(argument_class=FileStorageArgument)
+        self.reqparse.add_argument(
+            'file', type=FileStorage, required=True, location='files')
+        self.schema = serialize.AttachmentFileSchema()
+        super(FileAttachmentListAPI, self).__init__()
+
+    def get(self, attachment_id):
+        a_files = models.AttachmentFile.query.filter_by(attachment_id=attachment_id).all()
+        return [self.schema.dump(a_file).data for a_file in a_files]
+
+    def post(self, attachment_id):
+        args = self.reqparse.parse_args()
+        upload_file = args['file']
+        print(upload_file.filename)
+        extension = upload_file.filename.rsplit('.', 1)[1].lower()
+        if '.' in upload_file.filename and not extension in app.config['ALLOWED_EXTENSIONS']:
+            abort(400, message="File extension is not one of our supported types.")
+        new_a_file = models.AttachmentFile(attachment_id, upload_file.filename)
+        models.db.session.add(new_a_file)
+        models.db.session.commit()
+        return self.schema.dump(new_a_file).data
 
 
 class TimeListAPI(Resource):
@@ -488,6 +533,9 @@ api.add_resource(TaskAPI, '/api/task/<int:id>', endpoint='task')
 api.add_resource(AttachmentListAPI, '/api/attachments/<int:task_id>', endpoint='attachments')
 api.add_resource(AttachmentAPI, '/api/attachment/<int:id>', endpoint='attachment')
 api.add_resource(AttachmentDeleteListApi, '/api/attachments', endpoint='delete_attachments')
+
+
+api.add_resource(FileAttachmentListAPI, '/api/uploads/<int:attachment_id>', endpoint='uploads')
 
 api.add_resource(TimeListAPI, '/api/times/<int:task_id>', endpoint='times')
 api.add_resource(TimeAPI, '/api/time/<int:id>', endpoint='time')

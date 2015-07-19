@@ -50337,16 +50337,26 @@ app.controller('AddAttachmentController',
 
             $scope.upload = function (files) {
                 if (files && files.length) {
-                    for (var i = 0; i < files.length; i++) {
-                        var file = files[i];
-                        Upload.upload({
-                            url: '/api/attachments',
-                            fields: {
-                                'username': $scope.username
-                            },
-                            file: file
-                        });
-                    }
+                    $scope.new_attachment = Attachments.save(
+                        {taskId: $scope.taskId},
+                        {'comment': $scope.input.comment}
+                    );
+                    $scope.new_attachment.$promise.then(
+                        function (value) {
+                            console.log(value);
+                            for (var i = 0; i < files.length; i++) {
+                                var file = files[i];
+                                console.log(file);
+                                Upload.upload({
+                                    url: '/api/uploads/'+ $scope.new_attachment.id,
+                                    files: file
+                                });
+                            }
+                        },
+                        function (error) {
+                            console.log(error);
+                        }
+                    );
                 }
             };
 

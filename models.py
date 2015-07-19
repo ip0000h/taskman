@@ -206,15 +206,17 @@ class Attachment(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     created = db.Column(db.DateTime, nullable=False)
+    comment = db.Column(db.String(255), nullable=True)
 
     task_id = db.Column(db.Integer, db.ForeignKey('tasks.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     files = db.relationship(
-        'AttachmentFile', backref='attachment', cascade="all,delete", lazy='dynamic')
+        'AttachmentFile', cascade="all,delete", lazy='dynamic')
 
-    def __init__(self, task_id, user_id, created=None):
+    def __init__(self, task_id, user_id, comment=None, created=None):
         self.task_id = task_id
+        self.comment = comment
         self.user_id = user_id
         self.created = datetime.datetime.utcnow() if created is None else created
 
@@ -224,6 +226,10 @@ class Attachment(db.Model):
     @property
     def user_text(self):
         return self.user.username
+
+    @property
+    def files_count(self):
+        return self.files.count()
 
 
 class AttachmentFile(db.Model):
@@ -248,15 +254,17 @@ class Time(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     start = db.Column(db.DateTime, nullable=False)
     stop = db.Column(db.DateTime, nullable=True)
+    comment = db.Column(db.String(255), nullable=True)
 
     task_id = db.Column(db.Integer, db.ForeignKey('tasks.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
-    def __init__(self, task_id, user_id, start=None, stop=None):
+    def __init__(self, task_id, user_id, start=None, stop=None, comment=None):
         self.task_id = task_id
         self.user_id = user_id
         self.start = datetime.datetime.utcnow() if start is None else start
         self.stop = stop
+        self.comment = comment
 
     def __repr__(self):
         return '<Time {0}>'.format(self.id)

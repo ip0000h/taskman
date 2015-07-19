@@ -1,5 +1,5 @@
 from flask import Flask
-from flask import abort, g, jsonify, render_template, send_from_directory
+from flask import abort, g, jsonify, render_template, send_from_directory, send_file
 from flask.ext.restful import Resource, Api
 from flask.ext.restful import inputs, reqparse
 from flask.ext.httpauth import HTTPBasicAuth
@@ -442,6 +442,25 @@ class FileAttachmentListAPI(Resource):
         return self.schema.dump(new_a_file).data
 
 
+class FileAttachmentAPI(Resource):
+
+    decorators = [auth.login_required]
+
+    def get(self, id):
+        attachment_file = models.AttachmentFile.query.get(id)
+        return send_file(
+            attachment_file.get_file_path,
+            as_attachment=True,
+            attachment_filename=attachment_file.filename
+        )
+
+    def delete(self, id):
+        attachment_file = models.AttachmentFile.query.get(id)
+        models.db.session.delete(attachment_file)
+        models.db.session.commit()
+        return {'status': 'ok'}
+
+
 class TimeListAPI(Resource):
 
     decorators = [auth.login_required]
@@ -539,6 +558,7 @@ api.add_resource(AttachmentDeleteListApi, '/api/attachments', endpoint='delete_a
 
 
 api.add_resource(FileAttachmentListAPI, '/api/uploads/<int:attachment_id>', endpoint='uploads')
+api.add_resource(FileAttachmentAPI, '/api/attachment/file/<int:id>', endpoint='attachment_file')
 
 api.add_resource(TimeListAPI, '/api/times/<int:task_id>', endpoint='times')
 api.add_resource(TimeAPI, '/api/time/<int:id>', endpoint='time')

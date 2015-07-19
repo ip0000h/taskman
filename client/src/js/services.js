@@ -78,7 +78,7 @@ app.factory('Times', ['$resource', function($resource) {
 }]);
 
 //////////////////////////////////
-//group single service
+//time single service
 app.factory('Time', ['$resource', function($resource) {
     return $resource(
         '/api/time/:timeId',
@@ -88,7 +88,7 @@ app.factory('Time', ['$resource', function($resource) {
 }]);
 
 //////////////////////////////////
-//times list service
+//attachments list service
 app.factory('Attachments', ['$resource', function($resource) {
     return $resource(
         '/api/attachments/:taskId',
@@ -101,11 +101,9 @@ app.factory('Attachments', ['$resource', function($resource) {
 }]);
 
 //////////////////////////////////
-//group single service
+//attachment single service
 app.factory('Attachment', ['$resource', function($resource) {
     return $resource(
-        '/api/attachment/:attachmentId',
-        null,
-        {'update': {method:'PUT'}}
+        '/api/attachment/:attachmentId'
     );
 }]);

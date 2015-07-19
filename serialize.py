@@ -56,7 +56,7 @@ class AttachmentSchema(Schema):
     created = fields.DateTime()
     comment = fields.Str()
     user_text = fields.Str()
-    files = fields.Nested(AttachmentFileSchema, only='filename', many=True)
+    files = fields.Nested(AttachmentFileSchema, ('id', 'filename'), many=True)
 
 
 class TimeSchema(Schema):

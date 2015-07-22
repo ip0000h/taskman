@@ -430,7 +430,6 @@ class FileAttachmentListAPI(Resource):
     def post(self, attachment_id):
         args = self.reqparse.parse_args()
         upload_file = args['file']
-        print(upload_file.filename)
         extension = upload_file.filename.rsplit('.', 1)[1].lower()
         if '.' in upload_file.filename and not extension in app.config['ALLOWED_EXTENSIONS']:
             abort(400, message="File extension is not one of our supported types.")

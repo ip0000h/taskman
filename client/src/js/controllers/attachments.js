@@ -21,14 +21,12 @@ app.controller('AttachmentsListController',
                 }
             });
             modalInstance.result.then(function(data) {
-                console.log(data);
-                // $scope.attachments.push(data);
+                $scope.attachments.push(data);
             });
         };
 
         //select attachment
         $scope.selectAttachment = function(attachmentId) {
-            console.log($scope.attachments);
             var position = $.inArray(attachmentId, $scope.selectedAttachments);
             if (position + 1) {
                 $scope.selectedAttachments.splice(position, 1);
@@ -93,7 +91,9 @@ app.controller('AddAttachmentController',
                 $scope.upload($scope.input.files);
             });
 
-            var result={};
+            function uploadSuccess (data, status, headers, config) {
+                $scope.new_attachment.files.push(data);
+            }
 
             $scope.upload = function (files) {
                 if (files && files.length) {
@@ -103,17 +103,14 @@ app.controller('AddAttachmentController',
                     );
                     $scope.new_attachment.$promise.then(
                         function (value) {
-                            result.data = $scope.new_attachment;
-                            result.files = Array();
+                            $scope.new_attachment.files = Array();
                             for (var i = 0; i < files.length; i++) {
-                                var file = files[i];
-                                var response= Upload.upload({
+                                var upload = Upload.upload({
                                     url: '/api/uploads/' + $scope.new_attachment.id,
-                                    file: file
-                                });
-                                result.files.push(response);
-                                console.log(response);
+                                    file: files[i]
+                                }).success(uploadSuccess);
                             }
+                            $modalInstance.close($scope.new_attachment);
                         },
                         function (error) {
                             console.log(error);
@@ -121,8 +118,6 @@ app.controller('AddAttachmentController',
                     );
                 }
             };
-
-            $modalInstance.close(result);
         };
 
         $scope.cancel = function() {

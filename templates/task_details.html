@@ -108,7 +108,13 @@
                               <input type="checkbox" ng-click="selectAttachment(attachment.id)" ng-model="attachment.selected">
                             </td>
                             <td>{{attachment.id}}</td>
-                            <td><p ng-repeat="file in attachment.files"><a href="/api/attachment/file/{{file.id}}">{{file.filename}}</p></td>
+                            <td>
+                                <p ng-repeat="file in attachment.files">
+                                    <a href="/api/attachment/file/{{file.id}}">
+                                        {{file.filename}}
+                                    </a>
+                                </p>
+                            </td>
                             <td>{{attachment.created | datetz}}</td>
                             <td>{{attachment.user_text}}</td>
                             <td>{{attachment.comment}}</td>

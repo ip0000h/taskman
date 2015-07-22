@@ -5,13 +5,17 @@
     <div class="modal-body">
         <form>
             <div class="form-group">
-              <div ngf-drop ngf-select ng-model="input.files" class="drop-box" 
-                ngf-drag-over-class="dragover" ngf-multiple="true" ngf-allow-dir="true">Drop files here
+              <div class="row">
+                <div class="col-sm-12">
+                  <div ngf-drop ngf-select ng-model="input.files" class="drop-box" 
+                    ngf-drag-over-class="dragover" ngf-multiple="true" ngf-allow-dir="true">Drop files here
+                  </div>
+                  <div ngf-no-file-drop>File Drag/Drop is not supported for this browser</div>
+                  <ul>
+                    <li ng-repeat="f in input.files" style="font:smaller">{{f.name}}</li>
+                  </ul>
+                </div>
               </div>
-              <div ngf-no-file-drop>File Drag/Drop is not supported for this browser</div>
-              <ul>
-                <li ng-repeat="f in input.files" style="font:smaller">{{f.name}}</li>
-              </ul>
             </div>
             <div class="form-group">
               <label>Enter comment for attachment</label>

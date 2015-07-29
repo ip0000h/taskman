@@ -3,8 +3,8 @@
         <h3 class="modal-title">Deleting project</h3>
     </div>
     <div class="modal-body">
-        <p>You are trying to delete project: <b>{{projectName}}</b></p>
-        <p>With {{ tasksCount }} tasks</p>
+        <p>You are trying to delete project: <b>{{ projectName }}</b></p>
+        <p ng-hide="!tasksCount">With {{ tasksCount }} tasks</p>
         <p>Are you sure?</p>
     </div>
     <div class="modal-footer">

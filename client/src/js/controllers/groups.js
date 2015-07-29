@@ -43,10 +43,13 @@ app.controller('GroupsController',
                 controller: 'DeleteGroupController',
                 resolve: {
                     id: function() {
-                        return $scope.selectedProject.id;
+                        return $rootScope.activeGroup;
                     },
                     name: function() {
-                        return $scope.selectedProject.name;
+                        return $scope.selectedGroup.name;
+                    },
+                    projectsCount: function() {
+                        return $scope.selectedGroup.projects_count;
                     }
                 }
             });
@@ -54,6 +57,7 @@ app.controller('GroupsController',
                 var ind = $scope.groups.indexOf($scope.selectedGroup);
                 $scope.groups.splice(ind, 1);
                 if ($scope.groups.length) {
+
                     $rootScope.activeGroup = $scope.groups[0].id;
                     $scope.selectedGroup = $scope.groups[0];
                 }
@@ -74,14 +78,14 @@ app.controller('GroupsController',
                         return $rootScope.activeGroup;
                     },
                     oldName: function() {
-                        return $scope.activeGroupName;
+                        return $scope.selectedGroup.name;
                     }
                 }
             });
 
             modalInstance.result.then(function(data) {
                 $scope.groups[$scope.selectedGroup].name = data;
-                $scope.activeGroupName = data;
+                $scope.selectedGroup.name = data;
             });
         };
 }]);
@@ -95,8 +99,15 @@ app.controller('AddGroupController',
 
         $scope.ok = function() {
             if ($scope.input.name) {
-                var result = Groups.save({'name': $scope.input.name});
-                $modalInstance.close(result);
+                $scope.new_group = Groups.save({'name': $scope.input.name});
+                $scope.new_group.$promise.then(
+                    function (value) {
+                        $modalInstance.close(value);
+                    },
+                    function (error) {
+                        console.log(error);
+                    }
+                );
             }
         };
 
@@ -108,11 +119,11 @@ app.controller('AddGroupController',
 //////////////////////////////////
 //delete group modal controller
 app.controller('DeleteGroupController',
-    ['$scope', '$modalInstance', 'Group', 'id', 'name',
-    function ($scope, $modalInstance, Group, id, name, pcount) {
+    ['$scope', '$modalInstance', 'Group', 'id', 'name', 'projectsCount',
+    function ($scope, $modalInstance, Group, id, name, projectsCount) {
         $scope.groupId = id;
         $scope.groupName = name;
-        $scope.projectsCount = pcount;
+        $scope.projectsCount = projectsCount;
 
         $scope.ok = function() {
             Group.remove(

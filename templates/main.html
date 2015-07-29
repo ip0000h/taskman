@@ -39,10 +39,10 @@
                       <span class="caret"></span>
                     </button>
                     <ul class="dropdown-menu">
-                      <li><a href="" ng-click="deleteGroup()">
+                      <li><a href="" ng-click="deleteProject()">
                       <span class="glyphicon glyphicon-trash"></span> Delete Project
                       </a></li>
-                      <li><a href="" ng-click="renameGroup()">
+                      <li><a href="" ng-click="renameProject()">
                       <span class="glyphicon glyphicon-pencil"></span> Rename Project
                       </a></li>
                     </ul>
@@ -50,7 +50,7 @@
                 </div>
                 <div class="list-group">
                     <a class="list-group-item" ng-repeat="project in projects"
-                    href="" ng-click="setProject(project.id, project.name, $index)"
+                    href="" ng-click="setProject(project.id, project.name, project.tasks_count, $index)"
                     ng-class="{active: $index == selectedProject}">
                     {{project.name}}<span class="badge pull-right">
                     {{project.tasks_count}}</span></a>

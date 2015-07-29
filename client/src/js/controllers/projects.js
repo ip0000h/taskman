@@ -6,17 +6,23 @@ app.controller('ProjectsController',
     function ($rootScope, $scope, $modal, Projects) {
         //root broadcast event showGroupProjects
         $rootScope.$on('showGroupProjects', function() {
-            $scope.projects = Projects.query({groupId: $rootScope.activeGroup}, function(){
-                if ($scope.projects.length) {
-                    $rootScope.activeProject = $scope.projects[0].id;
-                    $scope.activeProject = $scope.projects[0].name;
-                    $scope.selectedProject = 0;
-                }
-                else{
-                    $rootScope.activeProject = null;
-                }
+            if ($rootScope.activeGroup) {
+                $scope.projects = Projects.query({groupId: $rootScope.activeGroup}, function(){
+                    if ($scope.projects.length) {
+                        $rootScope.activeProject = $scope.projects[0].id;
+                        $scope.activeProjectName = $scope.projects[0].name;
+                        $scope.activeTasksCount = $scope.projects[0].tasks_count;
+                        $scope.selectedProject = 0;
+                    }
+                    else{
+                        $rootScope.activeProject = null;
+                    }
+                    $rootScope.$broadcast('showProjectTasks');
+                });
+            } else {
+                $scope.projects = [];
                 $rootScope.$broadcast('showProjectTasks');
-            });
+            }
         });
 
         var findWithAttr = function(array, attr, value) {
@@ -26,7 +32,7 @@ app.controller('ProjectsController',
                 }
             }
         };
-        
+
         //root broadcast event changeGroupTasksCount
         $rootScope.$on('changeProjectTasksCount', function(event, data) {
             var projectInd = findWithAttr($scope.projects, 'id', data.projectId);
@@ -34,9 +40,10 @@ app.controller('ProjectsController',
         });
 
         //select current project
-        $scope.setProject = function(projectId, projectName, index) {
+        $scope.setProject = function(projectId, projectName, tasksCount, index) {
             $rootScope.activeProject = projectId;
-            $scope.activeGroupName = projectName;
+            $scope.activeProjectName = projectName;
+            $scope.activeTasksCount = tasksCount;
             $scope.selectedProject = index;
             $rootScope.activePage = 1;
             $rootScope.search_str = null;
@@ -57,12 +64,14 @@ app.controller('ProjectsController',
             modalInstance.result.then(function(data) {
                 $scope.projects.push(data);
                 $rootScope.activeProject = data.id;
+                $scope.activeProjectName = data.name;
+                $scope.activeTasksCount = data.tasks_count;
                 $scope.selectedProject = $scope.projects.length - 1;
                 $rootScope.$broadcast('showProjectTasks');
             });
         };
 
-        //delete group
+        //delete project
         $scope.deleteProject = function() {
             var modalInstance = $modal.open({
                 templateUrl: 'templates/delete_project.html',
@@ -72,7 +81,10 @@ app.controller('ProjectsController',
                         return $rootScope.activeProject;
                     },
                     name: function() {
-                        return $scope.selectedProject.name;
+                        return $scope.activeProjectName;
+                    },
+                    tasksCount: function() {
+                        return $scope.activeTasksCount;
                     }
                 }
             });
@@ -81,6 +93,7 @@ app.controller('ProjectsController',
                 if ($scope.projects.length) {
                     $rootScope.activeProject = $scope.projects[0].id;
                     $scope.activeProjectName = $scope.projects[0].name;
+                    $scope.activeTasksCount = $scope.projects[0].tasks_count;
                     $scope.selectedProject = 0;
                 }
                 else {
@@ -97,15 +110,16 @@ app.controller('ProjectsController',
                 controller: 'RenameProjectController',
                 resolve: {
                     id: function() {
-                        return $scope.selectedProject.id;
+                        return $rootScope.activeProject;
                     },
                     oldName: function() {
-                        return $scope.selectedProject.name;
+                        return $scope.activeProjectName;
                     }
                 }
             });
             modalInstance.result.then(function(data) {
-                $scope.selectedProject.name = data;
+                $scope.activeProjectName = data;
+                $scope.projects[$scope.selectedProject].name =data;
             });
         };
 }]);
@@ -117,14 +131,20 @@ app.controller('AddProjectController',
     function ($scope, $modalInstance, Projects, groupId) {
         $scope.input = {};
         $scope.groupId = groupId;
-        console.log($scope.groupId);
         $scope.ok = function() {
             if ($scope.input.name) {
-                var result = Projects.save(
+                $scope.new_project = Projects.save(
                     {groupId: $scope.groupId},
                     {'name': $scope.input.name}
                 );
-                $modalInstance.close(result);
+                $scope.new_project.$promise.then(
+                    function (value) {
+                        $modalInstance.close(value);
+                    },
+                    function (error) {
+                        console.log(error);
+                    }
+                );
             }
         };
 
@@ -136,11 +156,11 @@ app.controller('AddProjectController',
 //////////////////////////////////
 //delete project modal controller
 app.controller('DeleteProjectController',
-    ['$scope', '$modalInstance', 'Project', 'id', 'name',
-    function ($scope, $modalInstance, Project, id, name, tcount) {
+    ['$scope', '$modalInstance', 'Project', 'id', 'name', 'tasksCount',
+    function ($scope, $modalInstance, Project, id, name, tasksCount) {
         $scope.projectId = id;
         $scope.projectName = name;
-        $scope.tasksCount = tcount;
+        $scope.tasksCount = tasksCount;
 
         $scope.ok = function() {
             Project.remove(

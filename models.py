@@ -4,8 +4,6 @@ from sqlalchemy import event
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.bcrypt import generate_password_hash, check_password_hash
 from sqlalchemy_utils.types.choice import ChoiceType
-from itsdangerous import (TimedJSONWebSignatureSerializer
-                          as Serializer, BadSignature, SignatureExpired)
 
 from config import AppConfig
 
@@ -14,15 +12,16 @@ db = SQLAlchemy()
 
 class User(db.Model):
     __tablename__ = 'users'
-
+    # main fields
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
+    #optional fields
     email = db.Column(db.String(50), unique=True, nullable=True)
     jabber = db.Column(db.String(50), unique=True, nullable=True)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     is_admin = db.Column(db.Boolean, nullable=False, default=False)
-
+    #relationships
     created_tasks = db.relationship(
         'Task', backref='creator_user', lazy='dynamic', foreign_keys='Task.creator_id')
     assigned_tasks = db.relationship(
@@ -44,86 +43,79 @@ class User(db.Model):
     def is_authenticated(self):
         return True
 
+    #is user active function
     def is_active(self):
         return self.is_active
 
+    #is admin function
     def is_admin(self):
         return self.is_admin
 
+    #is anonymous function
     def is_anonymous(self):
         return False
 
+    #returns string of id
     def get_id(self):
         return str(self.id)
 
+    #set password function
     def set_password(self, new_password):
         self.password = self.hash_password(new_password)
 
+    #check password function
     def check_password(self, password):
         return check_password_hash(self.password, password)
-
+        
     @staticmethod
     def hash_password(password):
         return generate_password_hash(password)
 
-    def generate_auth_token(self, expiration=600):
-        s = Serializer(AppConfig.SECRET_KEY, expires_in=expiration)
-        return s.dumps({'id': self.id})
 
-    @staticmethod
-    def verify_auth_token(token):
-        s = Serializer(AppConfig.SECRET_KEY)
-        try:
-            data = s.loads(token)
-        except SignatureExpired:
-            return None  # valid token, but expired
-        except BadSignature:
-            return None  # invalid token
-        user = User.query.get(data['id'])
-        return user
-
-
-class Project(db.Model):
-    __tablename__ = 'projects'
-
+class Group(db.Model):
+    __tablename__ = 'groups'
+    #main fields
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True, nullable=False)
     created = db.Column(db.DateTime, nullable=False)
 
-    groups = db.relationship(
-        'Group', backref='project', cascade="all,delete", lazy='dynamic')
+    #relationships
+    projects = db.relationship(
+        'Project', backref='group', cascade="all,delete", lazy='dynamic')
 
     def __init__(self, name, created=None):
         self.name = name
         self.created = datetime.datetime.utcnow() if created is None else created
 
     def __repr__(self):
-        return '<Project {0}>'.format(self.name)
+        return '<Group {0}>'.format(self.name)
 
     @property
-    def groups_count(self):
-        return self.groups.count()
+    def projects_count(self):
+        return self.projects.count()
 
 
-class Group(db.Model):
-    __tablename__ = 'groups'
-
+class Project(db.Model):
+    __tablename__ = 'projects'
+    # main fields
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True, nullable=False)
     created = db.Column(db.DateTime, nullable=False)
 
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
+    #parent
+    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), nullable=False)
 
+    #relationships
     tasks = db.relationship(
-        'Task', backref='group', cascade="all,delete", lazy='dynamic')
+        'Task', backref='project', cascade="all,delete", lazy='dynamic')
 
-    def __init__(self, name, project_id, created=None):
+    def __init__(self, group_id, name, created=None):
+        self.group_id = group_id
         self.name = name
-        self.project_id = project_id
         self.created = datetime.datetime.utcnow() if created is None else created
 
     def __repr__(self):
-        return '<Group {0}>'.format(self.name)
+        return '<Project {0}>'.format(self.name)
 
     @property
     def tasks_count(self):
@@ -137,7 +129,7 @@ class Task(db.Model):
         (u'opened', u'Opened'),
         (u'closed', u'Closed'),
     )
-
+    #main fields
     id = db.Column(db.Integer, primary_key=True)
     created = db.Column(db.DateTime, nullable=False)
     updated = db.Column(db.DateTime, nullable=False)
@@ -145,10 +137,12 @@ class Task(db.Model):
     text = db.Column(db.Text, nullable=True)
     status = db.Column(ChoiceType(TASK_STATUS_CHOICES), nullable=False)
 
+    #parent
     creator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     assigned_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
 
+    #relationships
     attachments = db.relationship(
         'Attachment', backref='task', cascade="all,delete", lazy='dynamic')
     times = db.relationship(
@@ -156,7 +150,7 @@ class Task(db.Model):
 
     def __init__(
         self,
-        group_id,
+        project_id,
         creator_id,
         title,
         text=None,
@@ -164,7 +158,7 @@ class Task(db.Model):
         assigned_id=None,
         created=None
     ):
-        self.group_id = group_id
+        self.project_id = project_id
         self.creator_id = creator_id
         self.title = title
         self.text = text
@@ -205,14 +199,16 @@ class Task(db.Model):
 
 class Attachment(db.Model):
     __tablename__ = 'attachments'
-
+    #main fields
     id = db.Column(db.Integer, primary_key=True)
     created = db.Column(db.DateTime, nullable=False)
     comment = db.Column(db.String(255), nullable=True)
 
+    #parent
     task_id = db.Column(db.Integer, db.ForeignKey('tasks.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
+    #relationships
     files = db.relationship(
         'AttachmentFile', backref='attachment', cascade="all,delete", lazy='dynamic')
 
@@ -257,10 +253,11 @@ event.listen(
 
 class AttachmentFile(db.Model):
     __tablename__ = 'attachment_files'
-
+    #main fields
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(255), nullable=False)
 
+    #parent
     attachment_id = db.Column(db.Integer, db.ForeignKey('attachments.id'), nullable=False)
 
     def __init__(self, attachment_id, filename):
@@ -300,12 +297,13 @@ event.listen(
 
 class Time(db.Model):
     __tablename__ = 'times'
-
+    #main fields
     id = db.Column(db.Integer, primary_key=True)
     start = db.Column(db.DateTime, nullable=False)
     stop = db.Column(db.DateTime, nullable=True)
     comment = db.Column(db.String(255), nullable=True)
 
+    #parent
     task_id = db.Column(db.Integer, db.ForeignKey('tasks.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 

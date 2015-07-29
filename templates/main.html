@@ -1,33 +1,6 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-3">
-            <div class="projects" ng-controller="ProjectsController">
-                <div class="btn-group items-actions">
-                  <button type="button" class="btn btn-default" ng-click="addProject()">
-                    <span class="glyphicon glyphicon-plus"></span> Add Project
-                  </button>
-                  <div class="btn-group">
-                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                      Selected Project
-                      <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                      <li><a href="" ng-click="deleteProject()">
-                      <span class="glyphicon glyphicon-trash"></span> Delete Project
-                      </a></li>
-                      <li><a href="" ng-click="renameProject()">
-                      <span class="glyphicon glyphicon-pencil"></span> Rename Project
-                      </a></li>
-                    </ul>
-                  </div>
-                </div>
-                <select class="form-control"
-                  ng-options="project.name for project in projects"
-                  ng-model="selectedProject"
-                  ng-init="selectedProject"
-                  ng-change="setProject()">
-                </select>
-            </div>
             <div class="groups" ng-controller="GroupsController">
                 <div class="btn-group items-actions">
                   <button type="button" class="btn btn-default" ng-click="addGroup()">
@@ -48,12 +21,39 @@
                     </ul>
                   </div>
                 </div>
+                <select class="form-control"
+                  ng-options="group.name for group in groups"
+                  ng-model="selectedGroup"
+                  ng-init="selectedGroup"
+                  ng-change="setGroup()">
+                </select>
+            </div>
+            <div class="projects" ng-controller="ProjectsController">
+                <div class="btn-group items-actions">
+                  <button type="button" class="btn btn-default" ng-click="addProject()">
+                    <span class="glyphicon glyphicon-plus"></span> Add Project
+                  </button>
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                      Selected Project
+                      <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                      <li><a href="" ng-click="deleteGroup()">
+                      <span class="glyphicon glyphicon-trash"></span> Delete Project
+                      </a></li>
+                      <li><a href="" ng-click="renameGroup()">
+                      <span class="glyphicon glyphicon-pencil"></span> Rename Project
+                      </a></li>
+                    </ul>
+                  </div>
+                </div>
                 <div class="list-group">
-                    <a class="list-group-item" ng-repeat="group in groups"
-                    href="" ng-click="setGroup(group.id, group.name, $index)"
-                    ng-class="{active: $index == selectedGroup}">
-                    {{group.name}}<span class="badge pull-right">
-                    {{group.tasks_count}}</span></a>
+                    <a class="list-group-item" ng-repeat="project in projects"
+                    href="" ng-click="setProject(project.id, project.name, $index)"
+                    ng-class="{active: $index == selectedProject}">
+                    {{project.name}}<span class="badge pull-right">
+                    {{project.tasks_count}}</span></a>
                 </div>
             </div>
         </div>

@@ -10,14 +10,14 @@ class UserSchema(Schema):
     is_admin = fields.Boolean()
 
 
-class ProjectSchema(Schema):
+class GroupSchema(Schema):
     id = fields.Integer()
     name = fields.Str()
     created = fields.DateTime()
-    groups_count = fields.Integer()
+    projects_count = fields.Integer()
 
 
-class GroupSchema(Schema):
+class ProjectSchema(Schema):
     id = fields.Integer()
     name = fields.Str()
     created = fields.DateTime()

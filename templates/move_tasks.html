@@ -4,11 +4,11 @@
     </div>
     <div class="modal-body">
         <p>
-            You are trying to move selected tasks({{numSelected}})
+            You are trying to move selected tasks({{selectedTasks.length}})
         </p>
         <form>
             <label>Select Group:</label>
-            <select class="form-control" ng-options="group.name for group in groups"
+            <select class="form-control" ng-options="project.name for project in projects"
              ng-model="input.selectedOption"></select>
         </form>
     </div>

@@ -1,12 +1,16 @@
+from functools import wraps
 from flask import Flask
-from flask import abort, g, jsonify, render_template, send_from_directory, send_file
+from flask import abort, flash, render_template, request, send_from_directory, send_file, redirect, url_for
 from flask.ext.restful import Resource, Api
 from flask.ext.restful import inputs, reqparse
-from flask.ext.httpauth import HTTPBasicAuth
 from werkzeug.datastructures import FileStorage
+from werkzeug.contrib.fixers import ProxyFix
+from flask.ext.login import LoginManager, current_user, login_user, logout_user
 
 import models
 import serialize
+from forms import LoginForm
+
 
 #create flask application and load config from object
 app = Flask(__name__)
@@ -18,45 +22,68 @@ models.db.init_app(app)
 #init application api
 api = Api(app)
 
-#init auth object
-auth = HTTPBasicAuth()
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated():
+            if not app.config['DEBUG']:
+                return redirect(url_for('login', _scheme="https", _external=True))
+            else:
+                return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 
-@auth.verify_password
-def verify_password(username_or_token, password):
-    # first try to authenticate by token
-    user = models.User.verify_auth_token(username_or_token)
-    if not user:
-        # try to authenticate with username/password
-        user = models.User.query.filter_by(username=username_or_token).first()
-        if not user or not user.check_password(password):
-            return False
-    g.user = user
-    return True
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = models.User.query.get(form.user.id)
+        login_user(user)
+        flash(u'Successfully logged in as %s' % form.user.username)
+        if not app.config['DEBUG']:
+            return redirect(request.args.get("next") or url_for("index", _scheme="https", _external=True))
+        else:
+            return redirect(request.args.get("next") or url_for("index"))
+    return render_template("login.html", form=form)
 
 
-@app.route('/api/token')
-@auth.login_required
-def get_auth_token():
-    token = g.user.generate_auth_token()
-    return jsonify({'token': token.decode('ascii')})
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    if not app.config['DEBUG']:
+        return redirect(url_for("login", _scheme="https", _external=True))
+    else:
+        return redirect(url_for("login"))
+
 
 
 @app.route('/')
-@auth.login_required
+@login_required
 def index():
     return render_template('index.html')
 
 
 @app.route('/templates/<file_name>')
-@auth.login_required
+@login_required
 def templates(file_name):
     return send_from_directory('templates', file_name)
+
+#create and setup logger manager object
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+@login_manager.user_loader
+def load_user(userid):
+    return models.User.query.get(userid)
 
 
 class UserListAPI(Resource):
 
-    decorators = [auth.login_required]
+    decorators = [login_required]
 
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
@@ -88,7 +115,7 @@ class UserListAPI(Resource):
 
 class UserAPI(Resource):
 
-    decorators = [auth.login_required]
+    decorators = [login_required]
 
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
@@ -120,66 +147,9 @@ class UserAPI(Resource):
         models.db.session.commit()
         return {'status': 'ok'}
 
-
-class ProjectListAPI(Resource):
-
-    decorators = [auth.login_required]
-
-    def __init__(self):
-        self.reqparse = reqparse.RequestParser()
-        self.reqparse.add_argument(
-            'name', type=str, required=True,
-            help='No group name provided', location='json')
-        self.schema = serialize.ProjectSchema()
-        super(ProjectListAPI, self).__init__()
-
-    def get(self):
-        projects = models.Project.query.all()
-        return [self.schema.dump(project).data for project in projects]
-
-    def post(self):
-        args = self.reqparse.parse_args()
-        new_project = models.Project(args['name'])
-        models.db.session.add(new_project)
-        models.db.session.commit()
-        return self.schema.dump(new_project).data
-
-
-class ProjectAPI(Resource):
-
-    decorators = [auth.login_required]
-
-    def __init__(self):
-        self.reqparse = reqparse.RequestParser()
-        self.reqparse.add_argument(
-            'name', type=str, required=True,
-            help='No group name provided', location='json')
-        self.schema = serialize.ProjectSchema()
-        super(ProjectAPI, self).__init__()
-
-    def get(self, id):
-        project = models.Project.query.get(id)
-        return self.schema.dump(project).data
-
-    def put(self, id):
-        project = models.Project.query.get(id)
-        args = self.reqparse.parse_args()
-        for k, v in args.items():
-            if v is not None:
-                setattr(project, k, v)
-        models.db.session.commit()
-        return {'status': 'ok'}
-
-    def delete(self, id):
-        project = models.Project.query.get(id)
-        models.db.session.delete(project)
-        models.db.session.commit()
-        return {'status': 'ok'}
-
-
 class GroupListAPI(Resource):
 
-    decorators = [auth.login_required]
+    decorators = [login_required]
 
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
@@ -189,13 +159,13 @@ class GroupListAPI(Resource):
         self.schema = serialize.GroupSchema()
         super(GroupListAPI, self).__init__()
 
-    def get(self, project_id):
-        groups = models.Group.query.filter_by(project_id=project_id).all()
+    def get(self):
+        groups = models.Group.query.all()
         return [self.schema.dump(group).data for group in groups]
 
-    def post(self, project_id):
+    def post(self):
         args = self.reqparse.parse_args()
-        new_group = models.Group(args['name'], project_id)
+        new_group = models.Group(args['name'])
         models.db.session.add(new_group)
         models.db.session.commit()
         return self.schema.dump(new_group).data
@@ -203,7 +173,7 @@ class GroupListAPI(Resource):
 
 class GroupAPI(Resource):
 
-    decorators = [auth.login_required]
+    decorators = [login_required]
 
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
@@ -233,9 +203,65 @@ class GroupAPI(Resource):
         return {'status': 'ok'}
 
 
+class ProjectListAPI(Resource):
+
+    decorators = [login_required]
+
+    def __init__(self):
+        self.reqparse = reqparse.RequestParser()
+        self.reqparse.add_argument(
+            'name', type=str, required=True,
+            help='No group name provided', location='json')
+        self.schema = serialize.ProjectSchema()
+        super(ProjectListAPI, self).__init__()
+
+    def get(self, group_id):
+        projects = models.Project.query.filter_by(group_id=group_id).all()
+        return [self.schema.dump(project).data for project in projects]
+
+    def post(self, group_id):
+        args = self.reqparse.parse_args()
+        new_project = models.Project(group_id, args['name'])
+        models.db.session.add(new_project)
+        models.db.session.commit()
+        return self.schema.dump(new_project).data
+
+
+class ProjectAPI(Resource):
+
+    decorators = [login_required]
+
+    def __init__(self):
+        self.reqparse = reqparse.RequestParser()
+        self.reqparse.add_argument(
+            'name', type=str, required=True,
+            help='No group name provided', location='json')
+        self.schema = serialize.ProjectSchema()
+        super(ProjectAPI, self).__init__()
+
+    def get(self, id):
+        project = models.Project.query.get(id)
+        return self.schema.dump(project).data
+
+    def put(self, id):
+        project = models.Project.query.get(id)
+        args = self.reqparse.parse_args()
+        for k, v in args.items():
+            if v is not None:
+                setattr(project, k, v)
+        models.db.session.commit()
+        return {'status': 'ok'}
+
+    def delete(self, id):
+        project = models.Project.query.get(id)
+        models.db.session.delete(project)
+        models.db.session.commit()
+        return {'status': 'ok'}
+
+
 class TaskListAPI(Resource):
 
-    decorators = [auth.login_required]
+    decorators = [login_required]
 
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
@@ -253,14 +279,14 @@ class TaskListAPI(Resource):
         self.full_schema = serialize.TaskFullSchema()
         super(TaskListAPI, self).__init__()
 
-    def get(self, group_id):
-        tasks = models.Task.query.filter_by(group_id=group_id).all()
+    def get(self, project_id):
+        tasks = models.Task.query.filter_by(project_id=project_id).all()
         return [self.short_schema.dump(task).data for task in tasks]
 
-    def post(self, group_id):
+    def post(self, project_id):
         args = self.reqparse.parse_args()
         new_task = models.Task(
-            group_id, g.user.id, args['title'], args['text'], args['status'], args['assigned'])
+            project_id, current_user.id, args['title'], args['text'], args['status'], args['assigned'])
         models.db.session.add(new_task)
         models.db.session.commit()
         return self.full_schema.dump(new_task).data
@@ -268,14 +294,14 @@ class TaskListAPI(Resource):
 
 class TaskChangeListApi(Resource):
 
-    decorators = [auth.login_required]
+    decorators = [login_required]
 
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
         self.reqparse.add_argument(
             'id', type=int, required=True, action='append')
         self.reqparse.add_argument(
-            'new_group_id', type=int, required=False, location='json')
+            'new_project_id', type=int, required=False, location='json')
         super(TaskChangeListApi, self).__init__()
 
     def post(self):
@@ -289,14 +315,14 @@ class TaskChangeListApi(Resource):
         args = self.reqparse.parse_args()
         tasks = models.Task.query.filter(models.Task.id.in_(args['id'])).all()
         for task in tasks:
-            task.group_id = args['new_group_id']
+            task.project_id = args['new_project_id']
         models.db.session.commit()
         return {'status': 'ok'}
 
 
 class TaskAPI(Resource):
 
-    decorators = [auth.login_required]
+    decorators = [login_required]
 
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
@@ -335,7 +361,7 @@ class TaskAPI(Resource):
 
 class AttachmentListAPI(Resource):
 
-    decorators = [auth.login_required]
+    decorators = [login_required]
 
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
@@ -351,7 +377,7 @@ class AttachmentListAPI(Resource):
 
     def post(self, task_id):
         args = self.reqparse.parse_args()
-        new_attachment = models.Attachment(task_id, g.user.id, args['comment'])
+        new_attachment = models.Attachment(task_id, current_user.id, args['comment'])
         models.db.session.add(new_attachment)
         models.db.session.commit()
         return self.schema.dump(new_attachment).data
@@ -359,7 +385,7 @@ class AttachmentListAPI(Resource):
 
 class AttachmentAPI(Resource):
 
-    decorators = [auth.login_required]
+    decorators = [login_required]
 
     def __init__(self):
         self.schema = serialize.AttachmentSchema()
@@ -378,7 +404,7 @@ class AttachmentAPI(Resource):
 
 class AttachmentDeleteListApi(Resource):
 
-    decorators = [auth.login_required]
+    decorators = [login_required]
 
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
@@ -414,7 +440,7 @@ class FileStorageArgument(reqparse.Argument):
 
 class FileAttachmentListAPI(Resource):
 
-    decorators = [auth.login_required]
+    decorators = [login_required]
 
     def __init__(self):
         self.reqparse = reqparse.RequestParser(argument_class=FileStorageArgument)
@@ -443,7 +469,7 @@ class FileAttachmentListAPI(Resource):
 
 class FileAttachmentAPI(Resource):
 
-    decorators = [auth.login_required]
+    decorators = [login_required]
 
     def get(self, id):
         attachment_file = models.AttachmentFile.query.get(id)
@@ -462,7 +488,7 @@ class FileAttachmentAPI(Resource):
 
 class TimeListAPI(Resource):
 
-    decorators = [auth.login_required]
+    decorators = [login_required]
 
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
@@ -480,7 +506,7 @@ class TimeListAPI(Resource):
 
     def post(self, task_id):
         args = self.reqparse.parse_args()
-        new_time = models.Time(task_id, g.user.id, args['start'], args['stop'])
+        new_time = models.Time(task_id, current_user.id, args['start'], args['stop'])
         models.db.session.add(new_time)
         models.db.session.commit()
         return self.schema.dump(new_time).data
@@ -488,7 +514,7 @@ class TimeListAPI(Resource):
 
 class TimeAPI(Resource):
 
-    decorators = [auth.login_required]
+    decorators = [login_required]
 
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
@@ -522,7 +548,7 @@ class TimeAPI(Resource):
 
 class TimeDeleteListApi(Resource):
 
-    decorators = [auth.login_required]
+    decorators = [login_required]
 
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
@@ -541,13 +567,13 @@ class TimeDeleteListApi(Resource):
 api.add_resource(UserListAPI, '/api/users', endpoint='users')
 api.add_resource(UserAPI, '/api/user/<int:id>', endpoint='user')
 
-api.add_resource(ProjectListAPI, '/api/projects', endpoint='projects')
-api.add_resource(ProjectAPI, '/api/project/<int:id>', endpoint='project')
-
-api.add_resource(GroupListAPI, '/api/groups/<int:project_id>', endpoint='groups')
+api.add_resource(GroupListAPI, '/api/groups', endpoint='groups')
 api.add_resource(GroupAPI, '/api/group/<int:id>', endpoint='group')
 
-api.add_resource(TaskListAPI, '/api/tasks/<int:group_id>', endpoint='tasks')
+api.add_resource(ProjectListAPI, '/api/projects/<int:group_id>', endpoint='projects')
+api.add_resource(ProjectAPI, '/api/project/<int:id>', endpoint='project')
+
+api.add_resource(TaskListAPI, '/api/tasks/<int:project_id>', endpoint='tasks')
 api.add_resource(TaskChangeListApi, '/api/tasks', endpoint='change_tasks')
 api.add_resource(TaskAPI, '/api/task/<int:id>', endpoint='task')
 
@@ -563,6 +589,8 @@ api.add_resource(TimeListAPI, '/api/times/<int:task_id>', endpoint='times')
 api.add_resource(TimeAPI, '/api/time/<int:id>', endpoint='time')
 api.add_resource(TimeDeleteListApi, '/api/times', endpoint='delete_times')
 
+
+app.wsgi_app = ProxyFix(app.wsgi_app)
 
 if __name__ == "__main__":
     app.run()

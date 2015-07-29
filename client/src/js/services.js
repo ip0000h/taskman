@@ -1,30 +1,11 @@
 /////////////////////////////////////////////////////////////////////
 //app services
-//////////////////////////////////
-//projects list service
-app.factory('Projects', ['$resource', function($resource) {
-    return $resource(
-        '/api/projects',
-        null,
-        {'query': {method: 'GET', isArray: true}}
-    );
-}]);
-
-//////////////////////////////////
-//project single service
-app.factory('Project', ['$resource', function($resource) {
-    return $resource(
-        '/api/project/:projectId',
-        null,
-        {'update': {method:'PUT'}}
-    );
-}]);
 
 //////////////////////////////////
 //groups list service
 app.factory('Groups', ['$resource', function($resource) {
     return $resource(
-        '/api/groups/:projectId',
+        '/api/groups',
         null,
         {'query': {method: 'GET', isArray: true}}
     );
@@ -41,10 +22,30 @@ app.factory('Group', ['$resource', function($resource) {
 }]);
 
 //////////////////////////////////
+//projects list service
+app.factory('Projects', ['$resource', function($resource) {
+    return $resource(
+        '/api/projects/:groupId',
+        null,
+        {'query': {method: 'GET', isArray: true}}
+    );
+}]);
+
+//////////////////////////////////
+//project single service
+app.factory('Project', ['$resource', function($resource) {
+    return $resource(
+        '/api/project/:projectId',
+        null,
+        {'update': {method:'PUT'}}
+    );
+}]);
+
+//////////////////////////////////
 //tasks list service
 app.factory('Tasks', ['$resource', function($resource) {
     return $resource(
-        '/api/tasks/:groupId',
+        '/api/tasks/:projectId',
         null,
         {
             'query': {method: 'GET', isArray: true},

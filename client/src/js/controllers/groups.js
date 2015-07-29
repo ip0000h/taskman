@@ -4,43 +4,22 @@
 app.controller('GroupsController',
     ['$rootScope', '$scope', '$modal', 'Groups',
     function ($rootScope, $scope, $modal, Groups) {
-        //root broadcast event showProjectsGroups
-        $rootScope.$on('showProjectsGroups', function() {
-            $scope.groups = Groups.query({projectId: $rootScope.activeProject}, function(){
-                if ($scope.groups.length) {
-                    $rootScope.activeGroup = $scope.groups[0].id;
-                    $scope.activeGroupName = $scope.groups[0].name;
-                    $scope.selectedGroup = 0;
-                }
-                else{
-                    $rootScope.activeGroup = null;
-                }
-                $rootScope.$broadcast('showGroupTasks');
-            });
-        });
-
-        var findWithAttr = function(array, attr, value) {
-            for(var i = 0; i < array.length; i += 1) {
-                if(array[i][attr] === value) {
-                    return i;
-                }
+        //init
+        $scope.groups = Groups.query(function() {
+            if ($scope.groups.length) {
+                $rootScope.activeGroup = $scope.groups[0].id;
+                $scope.selectedGroup = $scope.groups[0];
             }
-        };
-        
-        //root broadcast event changeGroupTasksCount
-        $rootScope.$on('changeGroupTasksCount', function(event, data) {
-            var groupInd = findWithAttr($scope.groups, 'id', data.groupId);
-            $scope.groups[groupInd].tasks_count += data.mul * data.tasksCount;
+            else {
+                $rootScope.activeGroup=null;
+            }
+            $rootScope.$broadcast('showGroupProjects');
         });
 
         //select current group
-        $scope.setGroup = function(groupId, groupName, index) {
-            $rootScope.activeGroup = groupId;
-            $scope.activeGroupName = groupName;
-            $scope.selectedGroup = index;
-            $rootScope.activePage = 1;
-            $rootScope.search_str = null;
-            $rootScope.$broadcast('showGroupTasks');
+        $scope.setGroup = function() {
+            $rootScope.activeGroup = $scope.selectedGroup.id;
+            $rootScope.$broadcast('showGroupProjects');
         };
 
         //add group
@@ -48,17 +27,12 @@ app.controller('GroupsController',
             var modalInstance = $modal.open({
                 templateUrl: 'templates/add_group.html',
                 controller: 'AddGroupController',
-                resolve: {
-                    projectId: function() {
-                        return $rootScope.activeProject;
-                    }
-                }
             });
             modalInstance.result.then(function(data) {
                 $scope.groups.push(data);
                 $rootScope.activeGroup = data.id;
-                $scope.selectedGroup = $scope.groups.length - 1;
-                $rootScope.$broadcast('showGroupTasks');
+                $scope.selectedGroup = data;
+                $rootScope.$broadcast('showGroupProjects');
             });
         };
 
@@ -69,24 +43,24 @@ app.controller('GroupsController',
                 controller: 'DeleteGroupController',
                 resolve: {
                     id: function() {
-                        return $rootScope.activeGroup;
+                        return $scope.selectedProject.id;
                     },
                     name: function() {
-                        return $scope.activeGroupName;
+                        return $scope.selectedProject.name;
                     }
                 }
             });
             modalInstance.result.then(function() {
-                $scope.groups.splice($scope.selectedGroup, 1);
+                var ind = $scope.groups.indexOf($scope.selectedGroup);
+                $scope.groups.splice(ind, 1);
                 if ($scope.groups.length) {
                     $rootScope.activeGroup = $scope.groups[0].id;
-                    $scope.activeGroupName = $scope.groups[0].name;
-                    $scope.selectedGroup = 0;
+                    $scope.selectedGroup = $scope.groups[0];
                 }
                 else {
-                    $rootScope.activeProject=null;
+                    $rootScope.activeGroup=null;
                 }
-                $rootScope.$broadcast('showGroupTasks');
+                $rootScope.$broadcast('showGroupProjects');
             });
         };
 
@@ -113,18 +87,15 @@ app.controller('GroupsController',
 }]);
 
 //////////////////////////////////
-//add group controller
+//add group modal controller
 app.controller('AddGroupController',
-    ['$scope', '$modalInstance', 'Groups', 'projectId',
-    function ($scope, $modalInstance, Groups, projectId) {
+    ['$scope', '$modalInstance', 'Groups',
+    function ($scope, $modalInstance, Groups) {
         $scope.input = {};
-        $scope.projectId = projectId;
+
         $scope.ok = function() {
             if ($scope.input.name) {
-                var result = Groups.save(
-                    {projectId: $scope.projectId},
-                    {'name': $scope.input.name}
-                );
+                var result = Groups.save({'name': $scope.input.name});
                 $modalInstance.close(result);
             }
         };
@@ -138,10 +109,10 @@ app.controller('AddGroupController',
 //delete group modal controller
 app.controller('DeleteGroupController',
     ['$scope', '$modalInstance', 'Group', 'id', 'name',
-    function ($scope, $modalInstance, Group, id, name, tcount) {
+    function ($scope, $modalInstance, Group, id, name, pcount) {
         $scope.groupId = id;
         $scope.groupName = name;
-        $scope.tasksCount = tcount;
+        $scope.projectsCount = pcount;
 
         $scope.ok = function() {
             Group.remove(

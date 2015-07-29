@@ -8,10 +8,10 @@ app.controller('TasksListController',
         $scope.selectedTasks = [];
         $scope.selectAll = false;
 
-        //root broadcast event showGroupTasks
-        $rootScope.$on('showGroupTasks', function() {
-            if ($rootScope.activeGroup) {
-                $scope.tasks = Tasks.query({groupId: $rootScope.activeGroup});
+        //root broadcast event showProjectTasks
+        $rootScope.$on('showProjectTasks', function() {
+            if ($rootScope.activeProject) {
+                $scope.tasks = Tasks.query({projectId: $rootScope.activeProject});
             }
             else {
                 $scope.tasks =[];
@@ -26,19 +26,19 @@ app.controller('TasksListController',
                 templateUrl: 'templates/add_task.html',
                 controller: 'AddTaskController',
                 resolve: {
-                    groupId: function() {
-                        return $rootScope.activeGroup;
+                    projectId: function() {
+                        return $rootScope.activeProject;
                     }
                 }
             });
             modalInstance.result.then(function(data) {
                 $scope.tasks.push(data);
-                changeGroupData = {
-                    'groupId': $rootScope.activeGroup,
+                changeProjectData = {
+                    'projectId': $rootScope.activeProject,
                     'tasksCount': 1,
                     'mul': 1
                 };
-                $rootScope.$broadcast('changeGroupTasksCount', changeGroupData);
+                $rootScope.$broadcast('changeProjectTasksCount', changeProjectData);
             });
         };
 
@@ -89,12 +89,12 @@ app.controller('TasksListController',
                 $scope.tasks = $scope.tasks.filter(function(item) {
                     return !item.selected;
                 });
-                changeGroupData = {
-                    'groupId': $rootScope.activeGroup,
+                changeProjectData = {
+                    'projectId': $rootScope.activeProject,
                     'tasksCount': $scope.selectedTasks.length,
                     'mul': -1
                 };
-                $rootScope.$broadcast('changeGroupTasksCount', changeGroupData);
+                $rootScope.$broadcast('changeProjectTasksCount', changeProjectData);
                 $scope.selectedTasks = [];
             });
         };
@@ -112,8 +112,8 @@ app.controller('TasksListController',
                     selectedTasks: function() {
                         return $scope.selectedTasks;
                     },
-                    activeProject: function() {
-                        return $rootScope.activeProject;
+                    activeGroup: function() {
+                        return $rootScope.activeGroup;
                     }
                 }
             });
@@ -121,15 +121,15 @@ app.controller('TasksListController',
                 $scope.tasks = $scope.tasks.filter(function(item) {
                     return !item.selected;
                 });
-                changeGroupData = {
-                    'groupId': $rootScope.activeGroup,
+                changeProjectData = {
+                    'projectId': $rootScope.activeProject,
                     'tasksCount': $scope.selectedTasks.length,
                     'mul': -1
                 };
-                $rootScope.$broadcast('changeGroupTasksCount', changeGroupData);
-                changeGroupData.groupId = data;
-                changeGroupData.mul = 1;
-                $rootScope.$broadcast('changeGroupTasksCount', changeGroupData);
+                $rootScope.$broadcast('changeProjectTasksCount', changeProjectData);
+                changeProjectData.projectId = data;
+                changeProjectData.mul = 1;
+                $rootScope.$broadcast('changeProjectTasksCount', changeProjectData);
                 $scope.selectedTasks = [];
             });
         };
@@ -148,10 +148,10 @@ app.controller('TasksListController',
 //////////////////////////////////
 //add task controller
 app.controller('AddTaskController',
-    ['$scope', '$modalInstance', 'Tasks', 'groupId',
-    function ($scope, $modalInstance, Tasks, groupId) {
+    ['$scope', '$modalInstance', 'Tasks', 'projectId',
+    function ($scope, $modalInstance, Tasks, projectId) {
         $scope.input = {};
-        $scope.groupId = groupId;
+        $scope.projectId = projectId;
 
         $scope.ok = function() {
             var newTask = {
@@ -160,7 +160,7 @@ app.controller('AddTaskController',
                 'status': $scope.input.status
             };
             var result = Tasks.save(
-                {groupId: $scope.groupId},
+                {projectId: $scope.projectId},
                 newTask
             );
             $modalInstance.close(result);
@@ -194,19 +194,19 @@ app.controller('DeleteTasksController',
 //////////////////////////////////
 //move targets modal controller
 app.controller('MoveTasksController',
-    ['$scope', '$modalInstance', 'Groups', 'Tasks', 'selectedTasks', 'activeProject',
-    function ($scope, $modalInstance, Groups, Tasks, selectedTasks, activeProject) {
+    ['$scope', '$modalInstance', 'Projects', 'Tasks', 'selectedTasks', 'activeGroup',
+    function ($scope, $modalInstance, Projects, Tasks, selectedTasks, activeGroup) {
         $scope.input = {};
         $scope.selectedTasks = selectedTasks;
-        $scope.activeProject = activeProject;
-        $scope.groups = Groups.query({projectId: $scope.activeProject});
+        $scope.activeGroup = activeGroup;
+        $scope.projects = Projects.query({groupId: $scope.activeGroup});
 
         $scope.ok = function() {
             Tasks.update(
                 {},
                 {
                     'id': $scope.selectedTasks,
-                    'new_group_id': $scope.input.selectedOption.id
+                    'new_project_id': $scope.input.selectedOption.id
                 }
             );
             $modalInstance.close($scope.input.selectedOption.id);

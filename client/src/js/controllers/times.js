@@ -2,8 +2,8 @@
 //////////////////////////////////
 //tasks list controller
 app.controller('TimesListController',
-    ['$scope', '$routeParams', '$modal', 'Times',
-    function ($scope, $routeParams, $modal, Times) {
+    ['$scope', '$routeParams', '$modal', 'Times', 'Time',
+    function ($scope, $routeParams, $modal, Times, Time) {
         $scope.times = [];
         $scope.selectedTimes = [];
         $scope.selectAll = false;
@@ -23,6 +23,38 @@ app.controller('TimesListController',
             modalInstance.result.then(function(data) {
                 $scope.times.push(data);
             });
+        };
+
+        //start new time log
+        $scope.startTime = function() {
+            var new_time = Times.save(
+                {taskId: $routeParams.id},
+                {'start': moment().utc().format()}
+            );
+            new_time.$promise.then(
+                function (value) {
+                    $scope.times.push(new_time);
+                },
+                function (error) {
+                    console.log(error);
+                }
+            );
+        };
+
+        //add time
+        $scope.stopTime = function(timeId, index) {
+            var updated_time = Time.update(
+                {timeId: timeId},
+                {'stop': moment().utc().format()}
+            );
+            updated_time.$promise.then(
+                function (value) {
+                    $scope.times[index] = updated_time;
+                },
+                function (error) {
+                    console.log(error);
+                }
+            );
         };
 
         //select time

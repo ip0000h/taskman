@@ -456,14 +456,11 @@ class FileAttachmentListAPI(Resource):
     def post(self, attachment_id):
         args = self.reqparse.parse_args()
         upload_file = args['file']
-        extension = upload_file.filename.rsplit('.', 1)[1].lower()
-        if '.' in upload_file.filename and not extension in app.config['ALLOWED_EXTENSIONS']:
-            abort(400, message="File extension is not one of our supported types.")
         new_a_file = models.AttachmentFile(attachment_id, upload_file.filename)
         models.db.session.add(new_a_file)
         models.db.session.commit()
         if not new_a_file.save_file(args['file']):
-            abort(400, message="Failed writing file to the system.")
+            abort(400)
         return self.schema.dump(new_a_file).data
 
 
@@ -506,7 +503,12 @@ class TimeListAPI(Resource):
 
     def post(self, task_id):
         args = self.reqparse.parse_args()
-        new_time = models.Time(task_id, current_user.id, args['start'], args['stop'])
+        new_time = models.Time(
+            task_id,
+            current_user.id,
+            args['start'].replace(tzinfo=None),
+            None if args['stop'] is None else args['stop'].replace(tzinfo=None)
+        )
         models.db.session.add(new_time)
         models.db.session.commit()
         return self.schema.dump(new_time).data
@@ -519,12 +521,10 @@ class TimeAPI(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
         self.reqparse.add_argument(
-            'start', type=inputs.datetime_from_iso8601, required=True,
-            help='No start time provided', location='json')
-        self.reqparse.add_argument(
-            'stop', type=inputs.datetime_from_iso8601, required=False, location='json')
+            'stop', type=inputs.datetime_from_iso8601, required=True,
+            help='No stop time provided', location='json')
         self.schema = serialize.TimeSchema()
-        super(TimeListAPI, self).__init__()
+        super(TimeAPI, self).__init__()
 
     def get(self, id):
         time = models.Time.query.get(id)
@@ -533,11 +533,9 @@ class TimeAPI(Resource):
     def put(self, id):
         time = models.Time.query.get(id)
         args = self.reqparse.parse_args()
-        for k, v in args.items():
-            if v is not None:
-                setattr(time, k, v)
+        time.stop = args['stop'].replace(tzinfo=None)
         models.db.session.commit()
-        return {'status': 'ok'}
+        return self.schema.dump(time).data
 
     def delete(self, id):
         time = models.Time.query.get(id)

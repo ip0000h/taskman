@@ -9,6 +9,5 @@ class AppConfig(object):
     SECRET_KEY = 'SECRET_KEY'
     SQLALCHEMY_DATABASE_URI = 'postgresql://taskman:taskman@localhost/taskman'
     CHECK_FILE_EXTENSIONS = False
-    ALLOWED_EXTENSIONS = ['txt', 'zip', 'rar', 'tgz', 'gz', 'py']
     UPLOAD_FOLDER = os.path.join(basedir, 'uploads')
     MAX_FILE_SIZE = 1024 * 1024 * 1024 * 4  # 4GB Max file size

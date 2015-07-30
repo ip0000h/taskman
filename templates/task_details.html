@@ -23,6 +23,9 @@
                     </tbody>
                 </table>
             </div>
+            <div class="panel panel-default">
+                <textarea class="form-control" rows="3" ng-model="task.text"></textarea>
+            </div>
         </div>
     </div>
     <div class="row">
@@ -30,6 +33,9 @@
             <div class="btn-group items-actions">
               <button type="button" class="btn btn-default" ng-click="addTime()">
                 <span class="glyphicon glyphicon-plus"></span> Add Time
+              </button>
+              <button type="button" class="btn btn-default" ng-click="startTime()">
+                <span class="glyphicon glyphicon-play"></span> Start Time
               </button>
               <div class="btn-group">
                 <button type="button" class="btn btn-default dropdown-toggle"
@@ -64,7 +70,11 @@
                             <td>{{time.id}}</td>
                             <td>{{time.start | datetz}}</td>
                             <td ng-if="time.stop">{{time.stop | datetz}}</td>
-                            <td ng-if="!time.stop">No stop time</td>
+                            <td ng-if="!time.stop">
+                              <button type="button" class="btn btn-danger btn-xs" ng-click="stopTime(time.id, $index)">
+                                <span class="glyphicon glyphicon-stop"></span> Stop Time
+                              </button>
+                            </td>
                             <td>{{time.user_text}}</td>
                             <td>{{time.comment}}</td>
                         </tr>

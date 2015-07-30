@@ -50,6 +50,10 @@ label.checkbox {
     font-weight: normal;
 }
 
+textarea {
+  resize: vertical;
+}
+
 #loading-spin {
     min-height: 400px;
 }

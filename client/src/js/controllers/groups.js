@@ -18,7 +18,11 @@ app.controller('GroupsController',
 
         //select current group
         $scope.setGroup = function() {
-            $rootScope.activeGroup = $scope.selectedGroup.id;
+            if ($scope.selectedGroup) {
+                $rootScope.activeGroup = $scope.selectedGroup.id;
+            } else {
+                $rootScope.activeGroup=null;
+            }
             $rootScope.$broadcast('showGroupProjects');
         };
 

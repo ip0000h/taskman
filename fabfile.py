@@ -9,6 +9,7 @@ SUREPVISORCTL_EXECUTABLE_PATH = '/usr/local/bin/supervisorctl'
 DB_USER = 'taskman'
 DB_NAME = 'taskman'
 DB_PASSWORD = 'taskman'
+PROJECT_PATH = '/home/taskman/project'
 
 env.run = run
 
@@ -26,22 +27,22 @@ def add_os_package(name):
 
 #setup all(init db schema, run all migrations, create a user, start all apps)
 @task
-def setup(PROJECT_PATH):
+def setup():
     with cd(PROJECT_PATH):
         #setup global dependencies
         env.run('sudo apt-get update')
         add_os_package('nodejs')
         add_os_package('npm')
-        add_os_package('postgresql-server-dev-9.4')
+        add_os_package('postgresql-server-dev-9.3')
         #create db role and database
         create_db_role()
         create_db()
         #setup python dependencies
         env.run('sudo {0} install -U -r requirements.txt'.format(PIP_EXECUTABLE_PATH))
         #upgrade migrations
-        upgrade_db(PROJECT_PATH)
+        upgrade_db()
         #create a local user
-        create_user(PROJECT_PATH)
+        create_user()
         #setup javascript dependencies and collect static
         env.run('sudo npm install bower -g')
         env.run('sudo npm install grunt-cli -g')
@@ -59,14 +60,14 @@ def collect_static():
 
 #create a user
 @task
-def create_user(PROJECT_PATH):
+def create_user():
     with cd(PROJECT_PATH):
         env.run('{0} manage.py create_user'.format(PYTHON_EXECUTABLE_PATH))
 
 
 #upgrade db
 @task
-def upgrade_db(PROJECT_PATH):
+def upgrade_db():
     with cd(PROJECT_PATH):
         env.run('{0} manage.py db upgrade'.format(PYTHON_EXECUTABLE_PATH))
 

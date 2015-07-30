@@ -6,12 +6,12 @@
         <form>
             <div class="form-inline">
               <label>Enter name of new project</label>
-              <input type="text" class="form-control" placeholder="Enter name" ng-model="input.name">
+              <input type="text" class="form-control" placeholder="Enter name" ng-enter="ok()" ng-model="input.name">
             </div>
         </form>
     </div>
     <div class="modal-footer">
-        <button class="btn btn-primary" ng-click="ok()">
+        <button type="submit" ng-enter="ok()" class="btn btn-primary" ng-click="ok()">
             OK
         </button>
         <button class="btn btn-warning" ng-click="cancel()">

@@ -26,5 +26,15 @@ def create_user():
     else:
         print("Error: Passwords don't match")
 
+@manager.command
+def create_default_db_columns():
+    default_task_statuses = [
+        models.TaskStatus('opened', 100),
+        models.TaskStatus('closed', 200),
+    ]
+    models.db.session.bulk_save_objects(default_task_statuses)
+    models.db.session.commit()
+
+
 if __name__ == '__main__':
     manager.run()

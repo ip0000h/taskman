@@ -11,3 +11,4 @@ class AppConfig(object):
     CHECK_FILE_EXTENSIONS = False
     UPLOAD_FOLDER = os.path.join(basedir, 'uploads')
     MAX_FILE_SIZE = 1024 * 1024 * 1024 * 4  # 4GB Max file size
+    TASKS_PAGE_SIZE = 5

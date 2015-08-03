@@ -1,21 +1,16 @@
 <div>
     <div class="modal-header">
-        <h3 class="modal-title">Create a new task</h3>
+        <h3 class="modal-title">Change tasks status</h3>
     </div>
     <div class="modal-body">
+        <p>
+            You are trying to change status for selected tasks({{selectedTasks.length}})
+        </p>
         <form>
           <div class="form-group">
-            <label>Title</label>
-            <input type="text" class="form-control" placeholder="Enter title" ng-model="input.title">
-          </div>
-          <div class="form-group">
-            <label>Status</label>
+            <label>New Status</label>
             <select class="form-control" ng-options="status.name for status in statuses"
             ng-model="input.selectedOption"></select>
-          </div>
-          <div class="form-group">
-            <label>Note</label>
-            <textarea class="form-control" rows="3" ng-model="input.text"></textarea>
           </div>
         </form>
     </div>

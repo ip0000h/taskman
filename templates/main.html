@@ -1,6 +1,7 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-3">
+
             <div class="groups" ng-controller="GroupsController">
                 <div class="btn-group items-actions">
                   <button type="button" class="btn btn-default" ng-click="addGroup()">
@@ -28,6 +29,7 @@
                   ng-change="setGroup()">
                 </select>
             </div>
+
             <div class="projects" ng-controller="ProjectsController">
                 <div class="btn-group items-actions">
                   <button type="button" class="btn btn-default" ng-click="addProject()">
@@ -57,6 +59,7 @@
                 </div>
             </div>
         </div>
+
         <div class="col-md-9" ng-controller="TasksListController">
             <div class="row">
                 <div class="col-md-9">
@@ -71,11 +74,8 @@
                           <span class="caret"></span>
                         </button>
                         <ul class="dropdown-menu">
-                          <li><a href="" ng-click="closeTasks()">
-                          <span class="glyphicon glyphicon-check"></span> Close Selected
-                          </a></li>
-                          <li><a href="" ng-click="reopenTasks()">
-                          <span class="glyphicon glyphicon-share"></span> Re-Open Selected
+                          <li><a href="" ng-click="changeTasksStatus()">
+                          <span class="glyphicon glyphicon-check"></span> Change Status Selected
                           </a></li>
                           <li><a href="" ng-click="moveTasks()">
                           <span class="glyphicon glyphicon-floppy-save"></span> Move Selected
@@ -87,8 +87,9 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="col-md-3">
-                  <!-- <div class="paginator">
+                  <div class="paginator">
                     <div class="btn-group">
                       <button type="button" class="btn btn-default btn-sm"
                        ng-disabled="activePage == 1" ng-click="gotoPage(1)">
@@ -102,20 +103,21 @@
                           <button type="button"
                            class="btn btn-default btn-sm dropdown-toggle"
                            data-toggle="dropdown">
-                              {{activePage}}/{{pagesCount}}
+                              {{activePage}}/{{pages}}
                           </button>
                       </div>
                       <button type="button" class="btn btn-default btn-sm"
-                       ng-disabled="activePage == pagesCount" ng-click="gotoPage(activePage+1)">
+                       ng-disabled="activePage == pages" ng-click="gotoPage(activePage+1)">
                       <span class="glyphicon glyphicon-step-forward"></span>
                       </button>
                       <button type="button" class="btn btn-default btn-sm"
-                       ng-disabled="activePage == pagesCount" ng-click="gotoPage(pagesCount)">
+                       ng-disabled="activePage == pages" ng-click="gotoPage(pages)">
                       <span class="glyphicon glyphicon-fast-forward"></span>
                       </button>
                     </div>
-                  </div> -->
+                  </div>
                 </div>
+
             </div>
             <div ng-hide="loading" class="panel panel-default">
               <table class="table table-bordered">
@@ -142,7 +144,7 @@
                     </a>
                   </td>
                   <td>{{task.title}}</td>
-                  <td>{{task.status_text}}</td>
+                  <td>{{task.status}}</td>
                   <td>{{task.updated | datetz}}</td>
                   <td>{{task.created | datetz}}</td>
               </tr>
@@ -154,7 +156,7 @@
               <div id="loading-spin"></div>
             </div>
 
-            <!-- <div class="paginator">
+            <div class="paginator">
                 <div class="btn-group">
                   <button type="button" class="btn btn-default btn-sm"
                    ng-disabled="activePage == 1" ng-click="gotoPage(1)">
@@ -168,19 +170,20 @@
                       <button type="button"
                        class="btn btn-default btn-sm dropdown-toggle"
                        data-toggle="dropdown">
-                          {{activePage}}/{{pagesCount}}
+                          {{activePage}}/{{pages}}
                       </button>
                   </div>
                   <button type="button" class="btn btn-default btn-sm"
-                   ng-disabled="activePage == pagesCount" ng-click="gotoPage(activePage+1)">
+                   ng-disabled="activePage == pages" ng-click="gotoPage(activePage+1)">
                   <span class="glyphicon glyphicon-step-forward"></span>
                   </button>
                   <button type="button" class="btn btn-default btn-sm"
-                   ng-disabled="activePage == pagesCount" ng-click="gotoPage(pagesCount)">
+                   ng-disabled="activePage == pages" ng-click="gotoPage(pages)">
                   <span class="glyphicon glyphicon-fast-forward"></span>
                   </button>
                 </div>
-            </div> -->
+            </div>
+
         </div>
     </div>
 </div>

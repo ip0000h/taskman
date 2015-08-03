@@ -1,24 +1,17 @@
 """empty message
 
-Revision ID: 39ab9d18bcc
+Revision ID: 287f128ffc8
 Revises: None
-Create Date: 2015-07-28 15:47:56.137316
+Create Date: 2015-08-04 01:46:47.926812
 
 """
 
 # revision identifiers, used by Alembic.
-revision = '39ab9d18bcc'
+revision = '287f128ffc8'
 down_revision = None
 
 from alembic import op
 import sqlalchemy as sa
-import sqlalchemy_utils
-
-TASK_STATUS_CHOICES = (
-    (u'opened', u'Opened'),
-    (u'closed', u'Closed'),
-)
-
 
 
 def upgrade():
@@ -29,6 +22,14 @@ def upgrade():
     sa.Column('created', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name')
+    )
+    op.create_table('task_statuses',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=64), nullable=False),
+    sa.Column('priority', sa.Integer(), nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name'),
+    sa.UniqueConstraint('priority')
     )
     op.create_table('users',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -54,15 +55,17 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('created', sa.DateTime(), nullable=False),
     sa.Column('updated', sa.DateTime(), nullable=False),
+    sa.Column('due_date', sa.Date(), nullable=True),
     sa.Column('title', sa.String(length=255), nullable=False),
     sa.Column('text', sa.Text(), nullable=True),
-    sa.Column('status', sqlalchemy_utils.types.choice.ChoiceType(TASK_STATUS_CHOICES), nullable=False),
     sa.Column('creator_id', sa.Integer(), nullable=False),
     sa.Column('assigned_id', sa.Integer(), nullable=True),
     sa.Column('project_id', sa.Integer(), nullable=False),
+    sa.Column('task_status_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['assigned_id'], ['users.id'], ),
     sa.ForeignKeyConstraint(['creator_id'], ['users.id'], ),
     sa.ForeignKeyConstraint(['project_id'], ['projects.id'], ),
+    sa.ForeignKeyConstraint(['task_status_id'], ['task_statuses.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('attachments',
@@ -104,5 +107,6 @@ def downgrade():
     op.drop_table('tasks')
     op.drop_table('projects')
     op.drop_table('users')
+    op.drop_table('task_statuses')
     op.drop_table('groups')
     ### end Alembic commands ###

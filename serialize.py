@@ -24,12 +24,20 @@ class ProjectSchema(Schema):
     tasks_count = fields.Integer()
 
 
+class TaskStatusSchema(Schema):
+    id = fields.Integer()
+    name = fields.Str()
+    priority = fields.Integer()
+
+
 class TaskFullSchema(Schema):
     id = fields.Integer()
     created = fields.DateTime()
+    updated = fields.DateTime()
     title = fields.Str()
     text = fields.Str()
-    status_text = fields.Str()
+    status = fields.Str()
+    status_priority = fields.Integer()
     creator_id = fields.Integer()
     creator_username = fields.Str()
     assigned_id = fields.Integer()
@@ -43,7 +51,8 @@ class TaskShortSchema(Schema):
     created = fields.DateTime()
     updated = fields.DateTime()
     title = fields.Str()
-    status_text = fields.Str()
+    status = fields.Str()
+    status_priority = fields.Integer()
 
 
 class AttachmentFileSchema(Schema):

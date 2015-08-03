@@ -3,7 +3,6 @@ import os
 from sqlalchemy import event
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.bcrypt import generate_password_hash, check_password_hash
-from sqlalchemy_utils.types.choice import ChoiceType
 
 from config import AppConfig
 
@@ -122,25 +121,37 @@ class Project(db.Model):
         return self.tasks.count()
 
 
+class TaskStatus(db.Model):
+    __tablename__ = 'task_statuses'
+    #main fields
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True, nullable=False)
+    priority = db.Column(db.Integer, unique=True, nullable=False)
+
+    def __init__(self, name, priority):
+        self.name = name
+        self.priority = priority
+
+    def __repr__(self):
+        return '<TaskStatus {0}>'.format(self.name)
+
+
 class Task(db.Model):
     __tablename__ = 'tasks'
-
-    TASK_STATUS_CHOICES = (
-        (u'opened', u'Opened'),
-        (u'closed', u'Closed'),
-    )
     #main fields
     id = db.Column(db.Integer, primary_key=True)
     created = db.Column(db.DateTime, nullable=False)
     updated = db.Column(db.DateTime, nullable=False)
+    due_date = db.Column(db.Date, nullable=True)
     title = db.Column(db.String(255), nullable=False)
     text = db.Column(db.Text, nullable=True)
-    status = db.Column(ChoiceType(TASK_STATUS_CHOICES), nullable=False)
 
     #parent
     creator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     assigned_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
+    task_status_id = db.Column(db.Integer, db.ForeignKey('task_statuses.id'), nullable=False)
+    task_status = db.relationship('TaskStatus', backref='tasks')
 
     #relationships
     attachments = db.relationship(
@@ -152,17 +163,17 @@ class Task(db.Model):
         self,
         project_id,
         creator_id,
+        task_status_id,
         title,
         text=None,
-        status=u'opened',
         assigned_id=None,
         created=None
     ):
         self.project_id = project_id
         self.creator_id = creator_id
+        self.task_status_id = task_status_id
         self.title = title
         self.text = text
-        self.status = status
         self.assigned_id = assigned_id
         self.created = datetime.datetime.utcnow() if created is None else created
         self.updated = datetime.datetime.utcnow() if created is None else created
@@ -171,8 +182,12 @@ class Task(db.Model):
         return '<Task {0}>'.format(self.id)
 
     @property
-    def status_text(self):
-        return self.status.value
+    def status(self):
+        return self.task_status.name
+
+    @property
+    def status_priority(self):
+        return self.task_status.priority
 
     @property
     def attachments_count(self):
@@ -190,11 +205,12 @@ class Task(db.Model):
     def assigned_username(self):
         return self.assigned_user.username
 
-    def change_status(self, new_status):
-        if new_status in [item[0] for item in self.TASK_STATUS_CHOICES]:
-            self.status = new_status
-        else:
-            raise("Wrong status of Task")
+
+def task_after_update_listener(mapper, connection, target):
+    target.updated = datetime.datetime.utcnow()
+
+event.listen(
+    Task, 'after_update', task_after_update_listener)
 
 
 class Attachment(db.Model):

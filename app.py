@@ -1,6 +1,6 @@
 from functools import wraps
 from flask import Flask
-from flask import abort, flash, render_template, request, send_from_directory, send_file, redirect, url_for
+from flask import abort, flash, render_template, request, send_from_directory, send_file, redirect, url_for, make_response, jsonify
 from flask.ext.restful import Resource, Api
 from flask.ext.restful import inputs, reqparse
 from werkzeug.datastructures import FileStorage
@@ -21,6 +21,16 @@ models.db.init_app(app)
 
 #init application api
 api = Api(app)
+
+
+@app.errorhandler(400)
+def bad_request(error):
+    return make_response(jsonify({'error': 'Bad request'}), 400)
+
+
+@app.errorhandler(404)
+def not_found(error):
+    return make_response(jsonify({'error': 'Not found'}), 404)
 
 
 def login_required(f):
@@ -107,7 +117,11 @@ class UserListAPI(Resource):
     def post(self):
         args = self.reqparse.parse_args()
         new_user = models.User(
-            args['username'], args['password'], args['email'], args['jabber'])
+            args['username'],
+            args['password'],
+            args['email'],
+            args['jabber']
+        )
         models.db.session.add(new_user)
         models.db.session.commit()
         return self.schema.dump(new_user).data
@@ -259,34 +273,119 @@ class ProjectAPI(Resource):
         return {'status': 'ok'}
 
 
-class TaskListAPI(Resource):
+class TaskStatusListAPI(Resource):
 
     decorators = [login_required]
 
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
         self.reqparse.add_argument(
+            'name', type=str, required=True,
+            help='No task status name provided', location='json')
+        self.reqparse.add_argument(
+            'priority', type=int, required=True,
+            help='No task status priority provided', location='json')
+        self.schema = serialize.TaskStatusSchema()
+        super(TaskStatusListAPI, self).__init__()
+
+    def get(self):
+        task_statuses = models.TaskStatus.query.all()
+        return [self.schema.dump(task_status).data for task_status in task_statuses]
+
+    def post(self):
+        args = self.reqparse.parse_args()
+        new_task_status = models.TaskStatus(
+            args['name'],
+            args['priority']
+        )
+        models.db.session.add(new_task_status)
+        models.db.session.commit()
+        return self.schema.dump(new_task_status).data
+
+
+class TaskStatusAPI(Resource):
+
+    decorators = [login_required]
+
+    def __init__(self):
+        self.reqparse = reqparse.RequestParser()
+        self.reqparse.add_argument(
+            'name', type=str, required=False, location='json')
+        self.reqparse.add_argument(
+            'priority', type=int, required=False, location='json')
+        self.schema = serialize.TaskStatusSchema()
+        super(GroupAPI, self).__init__()
+
+    def get(self, id):
+        task_status = models.TaskStatus.query.get(id)
+        return self.schema.dump(task_status).data
+
+    def put(self, id):
+        task_status = models.TaskStatus.query.get(id)
+        args = self.reqparse.parse_args()
+        for k, v in args.items():
+            if v is not None:
+                setattr(task_status, k, v)
+        models.db.session.commit()
+        return {'status': 'ok'}
+
+    def delete(self, id):
+        task_status = models.TaskStatus.query.get(id)
+        models.db.session.delete(task_status)
+        models.db.session.commit()
+        return {'status': 'ok'}
+
+
+class TaskListAPI(Resource):
+
+    decorators = [login_required]
+
+    def __init__(self):
+        # reqparse for new task
+        self.post_reqparse = reqparse.RequestParser()
+        self.post_reqparse.add_argument(
             'title', type=str, required=True,
             help='No task title provided', location='json')
-        self.reqparse.add_argument(
+        self.post_reqparse.add_argument(
             'text', type=str, required=False, location='json')
-        self.reqparse.add_argument(
-            'status', type=str, required=True,
-            help='No task status provided', location='json')
-        self.reqparse.add_argument(
+        self.post_reqparse.add_argument(
+            'task_status_id', type=str, required=True,
+            help='No task status id provided', location='json')
+        self.post_reqparse.add_argument(
             'assigned', type=int, required=False, location='json')
+        # reqparse for get tasks list
+        self.get_reqparse = reqparse.RequestParser()
+        self.get_reqparse.add_argument(
+            'page', type=int, required=False, default=1, location='args')
+        # schema for tasks list(short)
         self.short_schema = serialize.TaskShortSchema()
+        # schema for creating new task(full)
         self.full_schema = serialize.TaskFullSchema()
         super(TaskListAPI, self).__init__()
 
     def get(self, project_id):
-        tasks = models.Task.query.filter_by(project_id=project_id).all()
-        return [self.short_schema.dump(task).data for task in tasks]
+        args = self.get_reqparse.parse_args()
+        tasks = models.Task.query. \
+            filter_by(project_id=project_id). \
+            join(models.Task.task_status). \
+            order_by(models.TaskStatus.priority.desc(), models.Task.updated.desc()). \
+            paginate(args['page'], app.config['TASKS_PAGE_SIZE'])
+        return {
+            'data': [self.short_schema.dump(task).data for task in tasks.items],
+            'pages': tasks.pages,
+            'total': tasks.total
+        }
 
     def post(self, project_id):
-        args = self.reqparse.parse_args()
+        args = self.post_reqparse.parse_args()
         new_task = models.Task(
-            project_id, current_user.id, args['title'], args['text'], args['status'], args['assigned'])
+            project_id,
+            current_user.id,
+            args['task_status_id'],
+            args['title'],
+            args['text'],
+            args['assigned']
+        )
         models.db.session.add(new_task)
         models.db.session.commit()
         return self.full_schema.dump(new_task).data
@@ -303,7 +402,7 @@ class TaskChangeListApi(Resource):
         self.reqparse.add_argument(
             'project_id', type=int, required=False, location='json')
         self.reqparse.add_argument(
-            'status', type=str, required=False, location='json')
+            'task_status_id', type=int, required=False, location='json')
         super(TaskChangeListApi, self).__init__()
 
     def post(self):
@@ -332,12 +431,12 @@ class TaskAPI(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
         self.reqparse.add_argument(
-            'title', type=str, required=True,
+            'title', type=str, required=False,
             help='No task title provided', location='json')
         self.reqparse.add_argument(
             'text', type=str, required=False, location='json')
         self.reqparse.add_argument(
-            'status', type=str, required=True,
+            'task_status_id', type=int, required=False,
             help='No task status provided', location='json')
         self.reqparse.add_argument(
             'assigned', type=int, required=False, location='json')
@@ -382,7 +481,11 @@ class AttachmentListAPI(Resource):
 
     def post(self, task_id):
         args = self.reqparse.parse_args()
-        new_attachment = models.Attachment(task_id, current_user.id, args['comment'])
+        new_attachment = models.Attachment(
+            task_id,
+            current_user.id,
+            args['comment']
+        )
         models.db.session.add(new_attachment)
         models.db.session.commit()
         return self.schema.dump(new_attachment).data
@@ -461,7 +564,10 @@ class FileAttachmentListAPI(Resource):
     def post(self, attachment_id):
         args = self.reqparse.parse_args()
         upload_file = args['file']
-        new_a_file = models.AttachmentFile(attachment_id, upload_file.filename)
+        new_a_file = models.AttachmentFile(
+            attachment_id,
+            upload_file.filename
+        )
         models.db.session.add(new_a_file)
         models.db.session.commit()
         if not new_a_file.save_file(args['file']):
@@ -575,6 +681,9 @@ api.add_resource(GroupAPI, '/api/group/<int:id>', endpoint='group')
 
 api.add_resource(ProjectListAPI, '/api/projects/<int:group_id>', endpoint='projects')
 api.add_resource(ProjectAPI, '/api/project/<int:id>', endpoint='project')
+
+api.add_resource(TaskStatusListAPI, '/api/task_statuses', endpoint='task_statuses')
+api.add_resource(TaskChangeListApi, '/api/task_status/<int:id>', endpoint='task_status')
 
 api.add_resource(TaskListAPI, '/api/tasks/<int:project_id>', endpoint='tasks')
 api.add_resource(TaskChangeListApi, '/api/tasks', endpoint='change_tasks')

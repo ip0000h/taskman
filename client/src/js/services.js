@@ -42,13 +42,37 @@ app.factory('Project', ['$resource', function($resource) {
 }]);
 
 //////////////////////////////////
+//tasks statuses list service
+app.factory('TaskStatuses', ['$resource', function($resource) {
+    return $resource(
+        '/api/task_statuses',
+        null,
+        {
+            'query': {method: 'GET', isArray: true},
+            'remove': {method: 'POST'},
+            'update': {method:'PUT'}
+        }
+    );
+}]);
+
+//////////////////////////////////
+//tasks status single service
+app.factory('TaskStatus', ['$resource', function($resource) {
+    return $resource(
+        '/api/task_status/:taskStatusId',
+        null,
+        {'update': {method:'PUT'}}
+    );
+}]);
+
+//////////////////////////////////
 //tasks list service
 app.factory('Tasks', ['$resource', function($resource) {
     return $resource(
         '/api/tasks/:projectId',
         null,
         {
-            'query': {method: 'GET', isArray: true},
+            'query': {method: 'GET'},
             'remove': {method: 'POST'},
             'update': {method:'PUT'}
         }

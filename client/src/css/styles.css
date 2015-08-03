@@ -35,6 +35,14 @@ tbody tr:hover td {
     background-color: transparent;
 }
 
+tbody tr.opened {
+    background-color: #89F273;
+}
+
+tbody tr.closed {
+    background-color: #EA8C87;
+}
+
 .table {
     background-color: #fff;
 }

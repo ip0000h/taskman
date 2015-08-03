@@ -4,15 +4,33 @@
 app.controller('TasksListController',
     ['$rootScope', '$scope', '$modal', 'Tasks',
     function ($rootScope, $scope, $modal, Tasks) {
+        $scope.activePage = 1;
         //root broadcast event showProjectTasks
         $rootScope.$on('showProjectTasks', function() {
+            $scope.selectedTasks = [];
             if ($rootScope.activeProject) {
-                $scope.tasks = Tasks.query({projectId: $rootScope.activeProject});
+                var result = Tasks.query(
+                    {
+                        projectId: $rootScope.activeProject,
+                        page: $scope.activePage
+                    }
+                );
+                result.$promise.then(
+                    function (value) {
+                        $scope.tasks = value.data;
+                        $scope.pages = value.pages;
+                        $scope.total = value.total;
+                    },
+                    function (error) {
+                        console.log(error);
+                    }
+                );
             }
             else {
                 $scope.tasks =[];
+                $scope.pages = 0;
+                $scope.total = 0;
             }
-            $scope.selectedTasks = [];
         });
 
         //add task
@@ -46,7 +64,6 @@ app.controller('TasksListController',
                 $scope.selectedTasks.push(taskId);
             }
             $scope.selectAll = false;
-            console.log($scope.selectedTasks);
         };
 
         //select all tasks at current page
@@ -63,43 +80,28 @@ app.controller('TasksListController',
             $scope.tasks.forEach(function(item) {
                 item.selected = $scope.selectAll;
             });
-            console.log($scope.selectedTasks);
         };
 
         //close tasks
-        $scope.closeTasks = function() {
+        $scope.changeTasksStatus = function() {
             if ($scope.selectedTasks.length === 0) {
                 alert("No selected tasks");
                 return;
             }
-            Tasks.update(
-                {},
-                {
-                    'id': $scope.selectedTasks,
-                    'status': 'closed'
+            var modalInstance = $modal.open({
+                templateUrl: 'templates/change_tasks_status.html',
+                controller: 'ChangeTasksStatusController',
+                resolve: {
+                    selectedTasks: function() {
+                        return $scope.selectedTasks;
+                    }
                 }
-            );
-            $scope.selectedTasks = [];
-            $scope.selectAll = false;
-            $rootScope.$broadcast('showProjectTasks');
-        };
-
-        //re-open tasks
-        $scope.reopenTasks = function() {
-            if ($scope.selectedTasks.length === 0) {
-                alert("No selected tasks");
-                return;
-            }
-            Tasks.update(
-                {},
-                {
-                    'id': $scope.selectedTasks,
-                    'status': 'opened'
-                }
-            );
-            $scope.selectedTasks = [];
-            $scope.selectAll = false;
-            $rootScope.$broadcast('showProjectTasks');
+            });
+            modalInstance.result.then(function() {
+                $scope.selectedTasks = [];
+                $scope.selectAll = false;
+                $rootScope.$broadcast('showProjectTasks');
+            });
         };
 
         //delete tasks
@@ -170,34 +172,56 @@ app.controller('TasksListController',
 
         //go to page
         $scope.gotoPage = function(page) {
-            $rootScope.activePage = page;
-            if ($rootScope.search_str) {
-                $rootScope.$broadcast('searchTasks');
-            } else {
-                $rootScope.$broadcast('showGroupTasks');
-            }
+            $scope.activePage = page;
+            $rootScope.$broadcast('showProjectTasks');
         };
 }]);
 
 //////////////////////////////////
-//add task controller
+//add task modal controller
 app.controller('AddTaskController',
-    ['$scope', '$modalInstance', 'Tasks', 'projectId',
-    function ($scope, $modalInstance, Tasks, projectId) {
+    ['$scope', '$modalInstance', 'Tasks', 'TaskStatuses', 'projectId',
+    function ($scope, $modalInstance, Tasks, TaskStatuses, projectId) {
         $scope.input = {};
         $scope.projectId = projectId;
+        $scope.statuses = TaskStatuses.query();
 
         $scope.ok = function() {
             var newTask = {
                 'title': $scope.input.title,
                 'text': $scope.input.text,
-                'status': $scope.input.status
+                'task_status_id': $scope.input.selectedOption.id
             };
             var result = Tasks.save(
                 {projectId: $scope.projectId},
                 newTask
             );
             $modalInstance.close(result);
+        };
+
+        $scope.cancel = function() {
+            $modalInstance.dismiss('cancel');
+        };
+}]);
+
+//////////////////////////////////
+//change tasks status modal controller
+app.controller('ChangeTasksStatusController',
+    ['$scope', '$modalInstance', 'Tasks', 'TaskStatuses', 'selectedTasks',
+    function ($scope, $modalInstance, Tasks, TaskStatuses, selectedTasks) {
+        $scope.input = {};
+        $scope.selectedTasks = selectedTasks;
+        $scope.statuses = TaskStatuses.query();
+
+        $scope.ok = function() {
+            Tasks.update(
+                {},
+                {
+                    'id': $scope.selectedTasks,
+                    'task_status_id': $scope.input.selectedOption.id
+                }
+            );
+            $modalInstance.close();
         };
 
         $scope.cancel = function() {

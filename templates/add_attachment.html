@@ -6,19 +6,21 @@
         <form>
             <div class="form-group">
               <div class="row">
-                <div class="col-sm-12">
-                  <div ngf-drop ngf-select ng-model="input.files" class="drop-box" 
+                <div class="col-sm-6">
+                  <div ngf-drop ngf-select ng-model="input.files" class="drop-box"
                     ngf-drag-over-class="dragover" ngf-multiple="true" ngf-allow-dir="true">Drop files here
                   </div>
                   <div ngf-no-file-drop>File Drag/Drop is not supported for this browser</div>
+                </div>
+                <div class="col-sm-6">
                   <ul>
                     <li ng-repeat="f in input.files" style="font:smaller">{{f.name}}</li>
                   </ul>
                 </div>
               </div>
             </div>
-            <div class="form-group">
-              <label>Enter comment for attachment</label>
+            <div class="form-inline">
+              <label>Comment:</label>
               <input type="text" class="form-control" placeholder="Enter comment" ng-model="input.comment">
             </div>
         </form>

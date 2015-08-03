@@ -6,7 +6,6 @@ app.controller('TimesListController',
     function ($scope, $routeParams, $modal, Times, Time) {
         $scope.times = [];
         $scope.selectedTimes = [];
-        $scope.selectAll = false;
         $scope.times = Times.query({taskId: $routeParams.id});
 
         //add time
@@ -62,23 +61,22 @@ app.controller('TimesListController',
             var position = $.inArray(timeId, $scope.selectedTimes);
             if (position + 1) {
                 $scope.selectedTimes.splice(position, 1);
-                $scope.selectAll = false;
             } else {
                 $scope.selectedTimes.push(timeId);
-                $scope.selectAll = false;
             }
+            $scope.selectAll = false;
         };
 
         //select all times
         $scope.selectAllTimes = function() {
             $scope.selectedTimes = [];
             if ($scope.selectAll) {
-                $scope.selectAll = false;
-            } else {
                 $scope.selectAll = true;
                 $scope.times.forEach(function(item) {
                     $scope.selectedTimes.push(item.id);
                 });
+            } else {
+                $scope.selectAll = false;
             }
             $scope.times.forEach(function(item) {
                 item.selected = $scope.selectAll;
@@ -105,6 +103,7 @@ app.controller('TimesListController',
                     return !item.selected;
                 });
                 $scope.selectedTimes = [];
+                $scope.selectAll = false;
             });
         };
 }]);

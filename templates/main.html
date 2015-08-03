@@ -71,6 +71,12 @@
                           <span class="caret"></span>
                         </button>
                         <ul class="dropdown-menu">
+                          <li><a href="" ng-click="closeTasks()">
+                          <span class="glyphicon glyphicon-check"></span> Close Selected
+                          </a></li>
+                          <li><a href="" ng-click="reopenTasks()">
+                          <span class="glyphicon glyphicon-share"></span> Re-Open Selected
+                          </a></li>
                           <li><a href="" ng-click="moveTasks()">
                           <span class="glyphicon glyphicon-floppy-save"></span> Move Selected
                           </a></li>
@@ -116,7 +122,7 @@
               <thead>
               <tr>
                   <th width="1%">
-                      <input type="checkbox" ng-click="selectPageTasks()">
+                      <input type="checkbox" ng-click="selectPageTasks()" ng-model="selectAll">
                   </th>
                   <th>#</th>
                   <th>Title</th>

@@ -4,10 +4,6 @@
 app.controller('TasksListController',
     ['$rootScope', '$scope', '$modal', 'Tasks',
     function ($rootScope, $scope, $modal, Tasks) {
-        //init
-        $scope.selectedTasks = [];
-        $scope.selectAll = false;
-
         //root broadcast event showProjectTasks
         $rootScope.$on('showProjectTasks', function() {
             if ($rootScope.activeProject) {
@@ -17,7 +13,6 @@ app.controller('TasksListController',
                 $scope.tasks =[];
             }
             $scope.selectedTasks = [];
-            $scope.selectAll = false;
         });
 
         //add task
@@ -47,27 +42,64 @@ app.controller('TasksListController',
             var position = $.inArray(taskId, $scope.selectedTasks);
             if (position + 1) {
                 $scope.selectedTasks.splice(position, 1);
-                $scope.selectAll = false;
             } else {
                 $scope.selectedTasks.push(taskId);
-                $scope.selectAll = false;
             }
+            $scope.selectAll = false;
+            console.log($scope.selectedTasks);
         };
 
         //select all tasks at current page
         $scope.selectPageTasks = function() {
             $scope.selectedTasks = [];
             if ($scope.selectAll) {
-                $scope.selectAll = false;
-            } else {
                 $scope.selectAll = true;
                 $scope.tasks.forEach(function(item) {
                     $scope.selectedTasks.push(item.id);
                 });
+            } else {
+                $scope.selectAll = false;
             }
             $scope.tasks.forEach(function(item) {
                 item.selected = $scope.selectAll;
             });
+            console.log($scope.selectedTasks);
+        };
+
+        //close tasks
+        $scope.closeTasks = function() {
+            if ($scope.selectedTasks.length === 0) {
+                alert("No selected tasks");
+                return;
+            }
+            Tasks.update(
+                {},
+                {
+                    'id': $scope.selectedTasks,
+                    'status': 'closed'
+                }
+            );
+            $scope.selectedTasks = [];
+            $scope.selectAll = false;
+            $rootScope.$broadcast('showProjectTasks');
+        };
+
+        //re-open tasks
+        $scope.reopenTasks = function() {
+            if ($scope.selectedTasks.length === 0) {
+                alert("No selected tasks");
+                return;
+            }
+            Tasks.update(
+                {},
+                {
+                    'id': $scope.selectedTasks,
+                    'status': 'opened'
+                }
+            );
+            $scope.selectedTasks = [];
+            $scope.selectAll = false;
+            $rootScope.$broadcast('showProjectTasks');
         };
 
         //delete tasks
@@ -96,6 +128,7 @@ app.controller('TasksListController',
                 };
                 $rootScope.$broadcast('changeProjectTasksCount', changeProjectData);
                 $scope.selectedTasks = [];
+                $scope.selectAll = false;
             });
         };
 
@@ -131,6 +164,7 @@ app.controller('TasksListController',
                 changeProjectData.mul = 1;
                 $rootScope.$broadcast('changeProjectTasksCount', changeProjectData);
                 $scope.selectedTasks = [];
+                $scope.selectAll = false;
             });
         };
 
@@ -206,7 +240,7 @@ app.controller('MoveTasksController',
                 {},
                 {
                     'id': $scope.selectedTasks,
-                    'new_project_id': $scope.input.selectedOption.id
+                    'project_id': $scope.input.selectedOption.id
                 }
             );
             $modalInstance.close($scope.input.selectedOption.id);

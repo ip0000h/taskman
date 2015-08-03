@@ -6,7 +6,6 @@ app.controller('AttachmentsListController',
     function ($scope, $routeParams, $modal, Attachments) {
         $scope.attachments = [];
         $scope.selectedAttachments = [];
-        $scope.selectAll = false;
         $scope.attachments = Attachments.query({taskId: $routeParams.id});
 
         //add attachment
@@ -30,23 +29,22 @@ app.controller('AttachmentsListController',
             var position = $.inArray(attachmentId, $scope.selectedAttachments);
             if (position + 1) {
                 $scope.selectedAttachments.splice(position, 1);
-                $scope.selectAll = false;
             } else {
                 $scope.selectedAttachments.push(attachmentId);
-                $scope.selectAll = false;
             }
+            $scope.selectAll = false;
         };
 
         //select all attachments
         $scope.selectAllAttachments = function() {
             $scope.selectedAttachments = [];
             if ($scope.selectAll) {
-                $scope.selectAll = false;
-            } else {
                 $scope.selectAll = true;
                 $scope.attachments.forEach(function(item) {
                     $scope.selectedAttachments.push(item.id);
                 });
+            } else {
+                $scope.selectAll = false;
             }
             $scope.attachments.forEach(function(item) {
                 item.selected = $scope.selectAll;
@@ -73,6 +71,7 @@ app.controller('AttachmentsListController',
                     return !item.selected;
                 });
                 $scope.selectedAttachments = [];
+                $scope.selectAll = false;
             });
         };
 }]);

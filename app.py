@@ -301,7 +301,9 @@ class TaskChangeListApi(Resource):
         self.reqparse.add_argument(
             'id', type=int, required=True, action='append')
         self.reqparse.add_argument(
-            'new_project_id', type=int, required=False, location='json')
+            'project_id', type=int, required=False, location='json')
+        self.reqparse.add_argument(
+            'status', type=str, required=False, location='json')
         super(TaskChangeListApi, self).__init__()
 
     def post(self):
@@ -314,8 +316,11 @@ class TaskChangeListApi(Resource):
     def put(self):
         args = self.reqparse.parse_args()
         tasks = models.Task.query.filter(models.Task.id.in_(args['id'])).all()
+        del args['id']
         for task in tasks:
-            task.project_id = args['new_project_id']
+            for k, v in args.items():
+                if v is not None:
+                    setattr(task, k, v)
         models.db.session.commit()
         return {'status': 'ok'}
 

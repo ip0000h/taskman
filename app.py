@@ -1,6 +1,15 @@
 from functools import wraps
 from flask import Flask
-from flask import abort, flash, render_template, request, send_from_directory, send_file, redirect, url_for, make_response, jsonify
+from flask import abort, \
+    flash, \
+    render_template, \
+    request, \
+    send_from_directory, \
+    send_file, \
+    redirect, \
+    url_for, \
+    make_response, \
+    jsonify
 from flask.ext.restful import Resource, Api
 from flask.ext.restful import inputs, reqparse
 from werkzeug.datastructures import FileStorage
@@ -12,14 +21,14 @@ import serialize
 from forms import LoginForm
 
 
-#create flask application and load config from object
+# create flask application and load config from object
 app = Flask(__name__)
 app.config.from_object('config.AppConfig')
 
-#init database with application
+# init database with application
 models.db.init_app(app)
 
-#init application api
+# init application api
 api = Api(app)
 
 
@@ -38,7 +47,8 @@ def login_required(f):
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated():
             if not app.config['DEBUG']:
-                return redirect(url_for('login', _scheme="https", _external=True))
+                return redirect(url_for(
+                    'login', _scheme="https", _external=True))
             else:
                 return redirect(url_for('login'))
         return f(*args, **kwargs)
@@ -53,7 +63,8 @@ def login():
         login_user(user)
         flash(u'Successfully logged in as %s' % form.user.username)
         if not app.config['DEBUG']:
-            return redirect(request.args.get("next") or url_for("index", _scheme="https", _external=True))
+            return redirect(request.args.get("next") or url_for(
+                "index", _scheme="https", _external=True))
         else:
             return redirect(request.args.get("next") or url_for("index"))
     return render_template("login.html", form=form)
@@ -69,7 +80,6 @@ def logout():
         return redirect(url_for("login"))
 
 
-
 @app.route('/')
 @login_required
 def index():
@@ -81,10 +91,11 @@ def index():
 def templates(file_name):
     return send_from_directory('templates', file_name)
 
-#create and setup logger manager object
+# create and setup logger manager object
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
 
 @login_manager.user_loader
 def load_user(userid):
@@ -160,6 +171,7 @@ class UserAPI(Resource):
         models.db.session.delete(user)
         models.db.session.commit()
         return {'status': 'ok'}
+
 
 class GroupListAPI(Resource):
 
@@ -290,7 +302,9 @@ class TaskStatusListAPI(Resource):
 
     def get(self):
         task_statuses = models.TaskStatus.query.all()
-        return [self.schema.dump(task_status).data for task_status in task_statuses]
+        return [
+            self.schema.dump(task_status).data for task_status in task_statuses
+        ]
 
     def post(self):
         args = self.reqparse.parse_args()
@@ -368,10 +382,14 @@ class TaskListAPI(Resource):
         tasks = models.Task.query. \
             filter_by(project_id=project_id). \
             join(models.Task.task_status). \
-            order_by(models.TaskStatus.priority.desc(), models.Task.updated.desc()). \
+            order_by(
+                models.TaskStatus.priority.desc(),
+                models.Task.updated.desc()). \
             paginate(args['page'], app.config['TASKS_PAGE_SIZE'])
         return {
-            'data': [self.short_schema.dump(task).data for task in tasks.items],
+            'data': [
+                self.short_schema.dump(task).data for task in tasks.items
+            ],
             'pages': tasks.pages,
             'total': tasks.total
         }
@@ -477,7 +495,9 @@ class AttachmentListAPI(Resource):
     def get(self, task_id):
         attachments = models.Attachment.query.filter_by(
             task_id=task_id).join(models.Attachment.files)
-        return [self.schema.dump(attachment).data for attachment in attachments]
+        return [
+            self.schema.dump(attachment).data for attachment in attachments
+        ]
 
     def post(self, task_id):
         args = self.reqparse.parse_args()
@@ -537,7 +557,8 @@ class FileStorageArgument(reqparse.Argument):
     def convert(self, value, op):
         if self.type is FileStorage:  # only in the case of files
             # this is done as self.type(value) makes the name attribute of the
-            # FileStorage object same as argument name and value is a FileStorage
+            # FileStorage object same as argument name
+            # and value is a FileStorage
             # object itself anyways
             return value
 
@@ -551,14 +572,16 @@ class FileAttachmentListAPI(Resource):
     decorators = [login_required]
 
     def __init__(self):
-        self.reqparse = reqparse.RequestParser(argument_class=FileStorageArgument)
+        self.reqparse = reqparse.RequestParser(
+            argument_class=FileStorageArgument)
         self.reqparse.add_argument(
             'file', type=FileStorage, required=True, location='files')
         self.schema = serialize.AttachmentFileSchema()
         super(FileAttachmentListAPI, self).__init__()
 
     def get(self, attachment_id):
-        a_files = models.AttachmentFile.query.filter_by(attachment_id=attachment_id).all()
+        a_files = models.AttachmentFile.query.filter_by(
+            attachment_id=attachment_id).all()
         return [self.schema.dump(a_file).data for a_file in a_files]
 
     def post(self, attachment_id):
@@ -604,7 +627,8 @@ class TimeListAPI(Resource):
             'start', type=inputs.datetime_from_iso8601, required=True,
             help='No start time provided', location='json')
         self.reqparse.add_argument(
-            'stop', type=inputs.datetime_from_iso8601, required=False, location='json')
+            'stop', type=inputs.datetime_from_iso8601,
+            required=False, location='json')
         self.schema = serialize.TimeSchema()
         super(TimeListAPI, self).__init__()
 
@@ -679,23 +703,38 @@ api.add_resource(UserAPI, '/api/user/<int:id>', endpoint='user')
 api.add_resource(GroupListAPI, '/api/groups', endpoint='groups')
 api.add_resource(GroupAPI, '/api/group/<int:id>', endpoint='group')
 
-api.add_resource(ProjectListAPI, '/api/projects/<int:group_id>', endpoint='projects')
+api.add_resource(
+    ProjectListAPI, '/api/projects/<int:group_id>', endpoint='projects')
 api.add_resource(ProjectAPI, '/api/project/<int:id>', endpoint='project')
 
-api.add_resource(TaskStatusListAPI, '/api/task_statuses', endpoint='task_statuses')
-api.add_resource(TaskChangeListApi, '/api/task_status/<int:id>', endpoint='task_status')
+api.add_resource(
+    TaskStatusListAPI, '/api/task_statuses', endpoint='task_statuses')
+api.add_resource(
+    TaskChangeListApi, '/api/task_status/<int:id>', endpoint='task_status')
 
 api.add_resource(TaskListAPI, '/api/tasks/<int:project_id>', endpoint='tasks')
 api.add_resource(TaskChangeListApi, '/api/tasks', endpoint='change_tasks')
 api.add_resource(TaskAPI, '/api/task/<int:id>', endpoint='task')
 
-api.add_resource(AttachmentListAPI, '/api/attachments/<int:task_id>', endpoint='attachments')
-api.add_resource(AttachmentAPI, '/api/attachment/<int:id>', endpoint='attachment')
-api.add_resource(AttachmentDeleteListApi, '/api/attachments', endpoint='delete_attachments')
+api.add_resource(
+    AttachmentListAPI, '/api/attachments/<int:task_id>', endpoint='attachments'
+)
+api.add_resource(
+    AttachmentAPI, '/api/attachment/<int:id>', endpoint='attachment')
+api.add_resource(
+    AttachmentDeleteListApi, '/api/attachments', endpoint='delete_attachments')
 
 
-api.add_resource(FileAttachmentListAPI, '/api/uploads/<int:attachment_id>', endpoint='uploads')
-api.add_resource(FileAttachmentAPI, '/api/attachment/file/<int:id>', endpoint='attachment_file')
+api.add_resource(
+    FileAttachmentListAPI,
+    '/api/uploads/<int:attachment_id>',
+    endpoint='uploads'
+)
+api.add_resource(
+    FileAttachmentAPI,
+    '/api/attachment/file/<int:id>',
+    endpoint='attachment_file'
+)
 
 api.add_resource(TimeListAPI, '/api/times/<int:task_id>', endpoint='times')
 api.add_resource(TimeAPI, '/api/time/<int:id>', endpoint='time')

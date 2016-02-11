@@ -1,8 +1,9 @@
-import datetime
 import os
-from sqlalchemy import event
+from datetime import datetime
+
+from flask.ext.bcrypt import check_password_hash, generate_password_hash
 from flask.ext.sqlalchemy import SQLAlchemy
-from flask.ext.bcrypt import generate_password_hash, check_password_hash
+from sqlalchemy import event
 
 from config import AppConfig
 
@@ -15,18 +16,21 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
-    #optional fields
+    # optional fields
     email = db.Column(db.String(50), unique=True, nullable=True)
     jabber = db.Column(db.String(50), unique=True, nullable=True)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     is_admin = db.Column(db.Boolean, nullable=False, default=False)
-    #relationships
+    # relationships
     created_tasks = db.relationship(
-        'Task', backref='creator_user', lazy='dynamic', foreign_keys='Task.creator_id')
+        'Task', backref='creator_user',
+        lazy='dynamic', foreign_keys='Task.creator_id')
     assigned_tasks = db.relationship(
-        'Task', backref='assign_user', lazy='dynamic', foreign_keys='Task.assigned_id')
+        'Task', backref='assign_user',
+        lazy='dynamic', foreign_keys='Task.assigned_id')
     attachments = db.relationship(
-        'Attachment', backref='user', lazy='dynamic', foreign_keys='Attachment.user_id')
+        'Attachment', backref='user',
+        lazy='dynamic', foreign_keys='Attachment.user_id')
     times = db.relationship(
         'Time', backref='user', lazy='dynamic', foreign_keys='Time.user_id')
 
@@ -42,30 +46,30 @@ class User(db.Model):
     def is_authenticated(self):
         return True
 
-    #is user active function
+    # is user active function
     def is_active(self):
         return self.is_active
 
-    #is admin function
+    # is admin function
     def is_admin(self):
         return self.is_admin
 
-    #is anonymous function
+    # is anonymous function
     def is_anonymous(self):
         return False
 
-    #returns string of id
+    # returns string of id
     def get_id(self):
         return str(self.id)
 
-    #set password function
+    # set password function
     def set_password(self, new_password):
         self.password = self.hash_password(new_password)
 
-    #check password function
+    # check password function
     def check_password(self, password):
         return check_password_hash(self.password, password)
-        
+
     @staticmethod
     def hash_password(password):
         return generate_password_hash(password)
@@ -73,18 +77,18 @@ class User(db.Model):
 
 class Group(db.Model):
     __tablename__ = 'groups'
-    #main fields
+    # main fields
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True, nullable=False)
     created = db.Column(db.DateTime, nullable=False)
 
-    #relationships
+    # relationships
     projects = db.relationship(
         'Project', backref='group', cascade="all,delete", lazy='dynamic')
 
     def __init__(self, name, created=None):
         self.name = name
-        self.created = datetime.datetime.utcnow() if created is None else created
+        self.created = datetime.utcnow() if created is None else created
 
     def __repr__(self):
         return '<Group {0}>'.format(self.name)
@@ -101,17 +105,18 @@ class Project(db.Model):
     name = db.Column(db.String(64), unique=True, nullable=False)
     created = db.Column(db.DateTime, nullable=False)
 
-    #parent
-    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), nullable=False)
+    # parent
+    group_id = db.Column(
+        db.Integer, db.ForeignKey('groups.id'), nullable=False)
 
-    #relationships
+    # relationships
     tasks = db.relationship(
         'Task', backref='project', cascade="all,delete", lazy='dynamic')
 
     def __init__(self, group_id, name, created=None):
         self.group_id = group_id
         self.name = name
-        self.created = datetime.datetime.utcnow() if created is None else created
+        self.created = datetime.utcnow() if created is None else created
 
     def __repr__(self):
         return '<Project {0}>'.format(self.name)
@@ -123,7 +128,7 @@ class Project(db.Model):
 
 class TaskStatus(db.Model):
     __tablename__ = 'task_statuses'
-    #main fields
+    # main fields
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True, nullable=False)
     priority = db.Column(db.Integer, unique=True, nullable=False)
@@ -138,7 +143,7 @@ class TaskStatus(db.Model):
 
 class Task(db.Model):
     __tablename__ = 'tasks'
-    #main fields
+    # main fields
     id = db.Column(db.Integer, primary_key=True)
     created = db.Column(db.DateTime, nullable=False)
     updated = db.Column(db.DateTime, nullable=False)
@@ -146,14 +151,18 @@ class Task(db.Model):
     title = db.Column(db.String(255), nullable=False)
     text = db.Column(db.Text, nullable=True)
 
-    #parent
-    creator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    assigned_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
-    task_status_id = db.Column(db.Integer, db.ForeignKey('task_statuses.id'), nullable=False)
+    # parent
+    creator_id = db.Column(
+        db.Integer, db.ForeignKey('users.id'), nullable=False)
+    assigned_id = db.Column(
+        db.Integer, db.ForeignKey('users.id'), nullable=True)
+    project_id = db.Column(
+        db.Integer, db.ForeignKey('projects.id'), nullable=False)
+    task_status_id = db.Column(
+        db.Integer, db.ForeignKey('task_statuses.id'), nullable=False)
     task_status = db.relationship('TaskStatus', backref='tasks')
 
-    #relationships
+    # relationships
     attachments = db.relationship(
         'Attachment', backref='task', cascade="all,delete", lazy='dynamic')
     times = db.relationship(
@@ -175,8 +184,8 @@ class Task(db.Model):
         self.title = title
         self.text = text
         self.assigned_id = assigned_id
-        self.created = datetime.datetime.utcnow() if created is None else created
-        self.updated = datetime.datetime.utcnow() if created is None else created
+        self.created = datetime.utcnow() if created is None else created
+        self.updated = datetime.utcnow() if created is None else created
 
     def __repr__(self):
         return '<Task {0}>'.format(self.id)
@@ -207,7 +216,7 @@ class Task(db.Model):
 
 
 def task_after_update_listener(mapper, connection, target):
-    target.updated = datetime.datetime.utcnow()
+    target.updated = datetime.utcnow()
 
 event.listen(
     Task, 'after_update', task_after_update_listener)
@@ -215,24 +224,25 @@ event.listen(
 
 class Attachment(db.Model):
     __tablename__ = 'attachments'
-    #main fields
+    # main fields
     id = db.Column(db.Integer, primary_key=True)
     created = db.Column(db.DateTime, nullable=False)
     comment = db.Column(db.String(255), nullable=True)
 
-    #parent
+    # parent
     task_id = db.Column(db.Integer, db.ForeignKey('tasks.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
-    #relationships
+    # relationships
     files = db.relationship(
-        'AttachmentFile', backref='attachment', cascade="all,delete", lazy='dynamic')
+        'AttachmentFile', backref='attachment',
+        cascade="all,delete", lazy='dynamic')
 
     def __init__(self, task_id, user_id, comment=None, created=None):
         self.task_id = task_id
         self.comment = comment
         self.user_id = user_id
-        self.created = datetime.datetime.utcnow() if created is None else created
+        self.created = datetime.utcnow() if created is None else created
         if not os.path.exists(self.get_dir_path):
             os.makedirs(self.get_dir_path)
 
@@ -257,6 +267,13 @@ class Attachment(db.Model):
         )
 
 
+def attachment_after_update_listener(mapper, connection, target):
+    target.task.updated = datetime.utcnow()
+
+event.listen(
+    Attachment, 'after_update', task_after_update_listener)
+
+
 def attachment_after_delete_listener(mapper, connection, target):
     try:
         os.rmdir(target.get_dir_path)
@@ -269,12 +286,13 @@ event.listen(
 
 class AttachmentFile(db.Model):
     __tablename__ = 'attachment_files'
-    #main fields
+    # main fields
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(255), nullable=False)
 
-    #parent
-    attachment_id = db.Column(db.Integer, db.ForeignKey('attachments.id'), nullable=False)
+    # parent
+    attachment_id = db.Column(
+        db.Integer, db.ForeignKey('attachments.id'), nullable=False)
 
     def __init__(self, attachment_id, filename):
         self.attachment_id = attachment_id
@@ -313,20 +331,20 @@ event.listen(
 
 class Time(db.Model):
     __tablename__ = 'times'
-    #main fields
+    # main fields
     id = db.Column(db.Integer, primary_key=True)
     start = db.Column(db.DateTime, nullable=False)
     stop = db.Column(db.DateTime, nullable=True)
     comment = db.Column(db.String(255), nullable=True)
 
-    #parent
+    # parent
     task_id = db.Column(db.Integer, db.ForeignKey('tasks.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     def __init__(self, task_id, user_id, start=None, stop=None, comment=None):
         self.task_id = task_id
         self.user_id = user_id
-        self.start = datetime.datetime.utcnow() if start is None else start
+        self.start = datetime.utcnow() if start is None else start
         self.stop = stop
         self.comment = comment
 

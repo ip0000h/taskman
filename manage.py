@@ -26,6 +26,7 @@ def create_user():
     else:
         print("Error: Passwords don't match")
 
+
 @manager.command
 def create_default_db_columns():
     default_task_statuses = [

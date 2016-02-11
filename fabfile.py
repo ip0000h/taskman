@@ -14,7 +14,7 @@ PROJECT_PATH = '/home/taskman/project'
 env.run = run
 
 
-#use with localhost
+# use with localhost
 @task
 def localhost():
     env.run = local
@@ -25,31 +25,32 @@ def add_os_package(name):
     env.run('sudo apt-get -y install {0}'.format(name))
 
 
-#setup all(init db schema, run all migrations, create a user, start all apps)
+# setup all(init db schema, run all migrations, create a user, start all apps)
 @task
 def setup():
     with cd(PROJECT_PATH):
-        #setup global dependencies
+        # setup global dependencies
         env.run('sudo apt-get update')
         add_os_package('nodejs')
         add_os_package('npm')
         add_os_package('postgresql-server-dev-9.3')
-        #create db role and database
+        # create db role and database
         create_db_role()
         create_db()
-        #setup python dependencies
-        env.run('sudo {0} install -U -r requirements.txt'.format(PIP_EXECUTABLE_PATH))
-        #upgrade migrations
+        # setup python dependencies
+        env.run('sudo {0} install -U -r requirements.txt'.format(
+            PIP_EXECUTABLE_PATH))
+        # upgrade migrations
         upgrade_db()
-        #create a local user
+        # create a local user
         create_user()
-        #setup javascript dependencies and collect static
+        # setup javascript dependencies and collect static
         env.run('sudo npm install bower -g')
         env.run('sudo npm install grunt-cli -g')
         collect_static()
 
 
-#collect static
+# collect static
 @task
 def collect_static():
     with lcd('client'):
@@ -58,40 +59,46 @@ def collect_static():
         env.run('grunt')
 
 
-#create a user
+# create a user
 @task
 def create_user():
     with cd(PROJECT_PATH):
         env.run('{0} manage.py create_user'.format(PYTHON_EXECUTABLE_PATH))
 
 
-#upgrade db
+# upgrade db
 @task
 def upgrade_db():
     with cd(PROJECT_PATH):
         env.run('{0} manage.py db upgrade'.format(PYTHON_EXECUTABLE_PATH))
 
 
-#create db
+# create db
 @task
 def create_db():
-    env.run('sudo -u {0} psql -c "CREATE DATABASE {1}"'.format(PGSQL_USER, DB_NAME))
-    env.run('sudo -u {0} psql -c "GRANT ALL privileges ON DATABASE {1} TO {2}"'.format(PGSQL_USER, DB_NAME, DB_USER))
+    env.run('sudo -u {0} psql -c "CREATE DATABASE {1}"'.format(
+        PGSQL_USER, DB_NAME))
+    env.run(
+        'sudo -u {0} psql -c "GRANT ALL privileges ON DATABASE {1} TO {2}"'.format(
+            PGSQL_USER, DB_NAME, DB_USER))
 
 
-#create db role
+# create db role
 @task
 def create_db_role():
-    env.run('sudo -u {0} psql -c "CREATE USER {1} WITH PASSWORD \'{2}\'"'.format(PGSQL_USER, DB_USER, DB_PASSWORD))
+    env.run(
+        'sudo -u {0} psql -c "CREATE USER {1} WITH PASSWORD \'{2}\'"'.format(
+            PGSQL_USER, DB_USER, DB_PASSWORD))
 
 
-#drop database
+# drop database
 @task
 def drop_db():
-    env.run('sudo -u {0} psql -c "DROP DATABASE {1}"'.format(PGSQL_USER, DB_NAME))
+    env.run('sudo -u {0} psql -c "DROP DATABASE {1}"'.format(
+        PGSQL_USER, DB_NAME))
 
 
-#drop db role
+# drop db role
 @task
 def drop_db_role():
     env.run('sudo -u {0} psql -c "DROP USER {1}"'.format(PGSQL_USER, DB_USER))

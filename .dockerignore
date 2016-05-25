@@ -1,0 +1,7 @@
+.git
+app/migrations
+app/settings/prod.py
+app/static
+dockerfiles
+*.pyc
+*.md

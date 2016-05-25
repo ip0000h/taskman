@@ -1,8 +1,9 @@
+app/migrations
+app/settings/prod.py
+app/static
+dockerfiles/logs
+dockerfiles/pgdata
+dockerfiles/redis
+dockerfiles/rabbitmq
+dockerfiles/mail
 *.pyc
-*.*~
-uploads/*
-client/node_modules
-client/bower_components
-client/build
-client/dist
-static

@@ -10,11 +10,11 @@ from flask import abort, \
     url_for, \
     make_response, \
     jsonify
-from flask.ext.restful import Resource, Api
-from flask.ext.restful import inputs, reqparse
 from werkzeug.datastructures import FileStorage
 from werkzeug.contrib.fixers import ProxyFix
-from flask.ext.login import LoginManager, current_user, login_user, logout_user
+from flask_login import LoginManager, current_user, login_user, logout_user
+from flask_restful import Resource, Api
+from flask_restful import inputs, reqparse
 
 import models
 import serialize
@@ -45,7 +45,7 @@ def not_found(error):
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated():
+        if not current_user.is_authenticated:
             if not app.config['DEBUG']:
                 return redirect(url_for(
                     'login', _scheme="https", _external=True))
@@ -744,4 +744,4 @@ api.add_resource(TimeDeleteListApi, '/api/times', endpoint='delete_times')
 app.wsgi_app = ProxyFix(app.wsgi_app)
 
 if __name__ == "__main__":
-    app.run()
+    app.run(port=app.config['PORT'])

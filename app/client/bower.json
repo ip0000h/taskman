@@ -4,7 +4,7 @@
   "authors": [
     "Ivan Gorbachev ip0000h@gmail.com"
   ],
-  "description": "rest-flask-angular skeleton",
+  "description": "taskman web application",
   "main": "app.js",
   "license": "MIT",
   "ignore": [

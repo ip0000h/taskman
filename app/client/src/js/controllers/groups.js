@@ -29,7 +29,7 @@ app.controller('GroupsController',
         //add group
         $scope.addGroup = function() {
             var modalInstance = $modal.open({
-                templateUrl: 'templates/add_group.html',
+                templateUrl: 'templates/group/add_group.html',
                 controller: 'AddGroupController',
             });
             modalInstance.result.then(function(data) {
@@ -43,7 +43,7 @@ app.controller('GroupsController',
         //delete group
         $scope.deleteGroup = function() {
             var modalInstance = $modal.open({
-                templateUrl: 'templates/delete_group.html',
+                templateUrl: 'templates/group/delete_group.html',
                 controller: 'DeleteGroupController',
                 resolve: {
                     id: function() {
@@ -75,7 +75,7 @@ app.controller('GroupsController',
         //rename group
         $scope.renameGroup = function() {
             var modalInstance = $modal.open({
-                templateUrl: 'templates/rename_group.html',
+                templateUrl: 'templates/group/rename_group.html',
                 controller: 'RenameGroupController',
                 resolve: {
                     id: function() {

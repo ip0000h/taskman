@@ -1,8 +1,8 @@
 import os
 from datetime import datetime
 
-from flask.ext.bcrypt import check_password_hash, generate_password_hash
-from flask.ext.sqlalchemy import SQLAlchemy
+from flask_bcrypt import check_password_hash, generate_password_hash
+from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import event
 
 from config import AppConfig

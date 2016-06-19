@@ -1,5 +1,8 @@
-from flask.ext.script import Manager, prompt, prompt_pass
-from flask.ext.migrate import Migrate, MigrateCommand
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from flask_script import Manager, prompt, prompt_pass
+from flask_migrate import Migrate, MigrateCommand
 
 from app import app
 import models

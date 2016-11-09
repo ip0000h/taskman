@@ -8,7 +8,6 @@ flaskapp:
     - ./supervisor/conf.d:/etc/supervisor/conf.d:ro
   links:
     - postgresql
-    - redis
   environment:
     - APP_ENVIRONMENT=DEVELOPMENT
     - FLASK_SETTINGS=settings/dev.py
@@ -23,13 +22,3 @@ postgresql:
     - ./dockerfiles/pgdata:/var/lib/postgresql/data/pgdata:rw
   ports:
     - "5432"
-
-redis:
-  restart: always
-  image: redis:latest
-  env_file: redis/.env
-  # volumes:
-  #   - ./redis/redis.conf:/data/redis.conf:ro
-  # command: redis-server /data/redis.conf
-  ports:
-    - "6379"

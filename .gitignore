@@ -1,3 +1,7 @@
+app/client/bower_components
+app/client/build
+app/client/dist
+app/client/node_modules
 app/migrations
 app/settings/prod.py
 app/static

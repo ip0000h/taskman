@@ -53,7 +53,7 @@ app.controller('ProjectsController',
         //add project
         $scope.addProject = function() {
             var modalInstance = $modal.open({
-                templateUrl: 'templates/add_project.html',
+                templateUrl: 'templates/project/add_project.html',
                 controller: 'AddProjectController',
                 resolve: {
                     groupId: function() {
@@ -74,7 +74,7 @@ app.controller('ProjectsController',
         //delete project
         $scope.deleteProject = function() {
             var modalInstance = $modal.open({
-                templateUrl: 'templates/delete_project.html',
+                templateUrl: 'templates/project/delete_project.html',
                 controller: 'DeleteProjectController',
                 resolve: {
                     id: function() {
@@ -106,7 +106,7 @@ app.controller('ProjectsController',
         //rename project
         $scope.renameProject = function() {
             var modalInstance = $modal.open({
-                templateUrl: 'templates/rename_project.html',
+                templateUrl: 'templates/project/rename_project.html',
                 controller: 'RenameProjectController',
                 resolve: {
                     id: function() {
